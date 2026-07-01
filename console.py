@@ -99,6 +99,7 @@ def main() -> None:
         "service",
         type=str,
         default="",
+        nargs='?',
         choices=get_services(DEFAULT_REGION).keys(),
         help="The AWS service to open in the console.",
     )
