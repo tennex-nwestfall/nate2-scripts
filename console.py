@@ -67,7 +67,11 @@ def get_signin_token(creds: dict) -> str:
     result = subprocess.run(
         ["curl", "-s", token_url], capture_output=True, text=True, check=True
     )
-    return json.loads(result.stdout)["SigninToken"]
+    try:
+        return json.loads(result.stdout)["SigninToken"]
+    except json.JSONDecodeError as e:
+        print(f"Error: Failed to parse JSON response. You may not have credentials.")
+        sys.exit(1)
 
 
 def build_console_url(destination: str, signin_token: str) -> str:
