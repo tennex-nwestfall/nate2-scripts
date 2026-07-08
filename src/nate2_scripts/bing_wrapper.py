@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """PTY wrapper for cdk that plays a sound when (y/n) prompts appear."""
 
 import fcntl
@@ -167,4 +166,5 @@ def main() -> None:
     run(args)
 
 
-main()
+if __name__ == "__main__":
+    main()

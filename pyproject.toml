@@ -1,0 +1,20 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "nate2-scripts"
+version = "0.1.0"
+description = "Utility scripts for AWS development on macOS"
+requires-python = ">=3.11"
+dependencies = [
+    "argcomplete",
+    "boto3",
+]
+
+[project.scripts]
+console = "nate2_scripts.console:main"
+bing-wrapper = "nate2_scripts.bing_wrapper:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/nate2_scripts"]
