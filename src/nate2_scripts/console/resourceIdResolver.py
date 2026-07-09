@@ -65,6 +65,18 @@ class ResourceIdResolver:
             return "lt"
         if re.match(r"^rtb-[0-9a-f]{8,17}$", resource_id):
             return "rtb"
+        if re.match(r"^vol-[0-9a-f]{8,17}$", resource_id):
+            return "vol"
+        if re.match(r"^snap-[0-9a-f]{8,17}$", resource_id):
+            return "snap"
+        if re.match(r"^eni-[0-9a-f]{8,17}$", resource_id):
+            return "eni"
+        if re.match(r"^nat-[0-9a-f]{8,17}$", resource_id):
+            return "nat"
+        # no idea where this is supposed to go, but it's a thing that exists
+        # keeping it here in case I figure out later
+        # if re.match(r"^fl-[0-9a-f]{8,17}$", resource_id):
+        #     return "fl"
         if self._KMS_UUID.match(resource_id) or self._KMS_MRK.match(resource_id):
             return "kms"
         if resource_id.startswith("db/"):
@@ -98,28 +110,49 @@ class ResourceIdResolver:
                     if ec2.describe_security_groups(GroupIds=[resource_id])[
                         "SecurityGroups"
                     ]:
-                        return f"{base}/ec2/v2/home?region={region}#SecurityGroups:groupId={resource_id}"
+                        return f"{base}/ec2/v2/home?region={region}#SecurityGroup:groupId={resource_id}"
                 case "ami":
                     ec2 = boto3.client("ec2", region_name=region)
                     if ec2.describe_images(ImageIds=[resource_id])["Images"]:
-                        return f"{base}/ec2/home?region={region}#Images:imageId={resource_id}"
+                        return f"{base}/ec2/home?region={region}#ImageDetails:imageId={resource_id}"
                 case "lt":
                     ec2 = boto3.client("ec2", region_name=region)
                     if ec2.describe_launch_templates(LaunchTemplateIds=[resource_id])[
                         "LaunchTemplates"
                     ]:
-                        return f"{base}/ec2/home?region={region}#LaunchTemplates:launchTemplateId={resource_id}"
+                        return f"{base}/ec2/home?region={region}#LaunchTemplateDetails:launchTemplateId={resource_id}"
                 case "rtb":
                     ec2 = boto3.client("ec2", region_name=region)
                     if ec2.describe_route_tables(RouteTableIds=[resource_id])[
                         "RouteTables"
                     ]:
                         return f"{base}/vpcconsole/home?region={region}#RouteTableDetails:RouteTableId={resource_id}"
+                case "vol":
+                    ec2 = boto3.client("ec2", region_name=region)
+                    if ec2.describe_volumes(VolumeIds=[resource_id])["Volumes"]:
+                        return f"{base}/ec2/home?region={region}#VolumeDetails:volumeId={resource_id}"
+                case "snap":
+                    ec2 = boto3.client("ec2", region_name=region)
+                    if ec2.describe_snapshots(SnapshotIds=[resource_id])["Snapshots"]:
+                        return f"{base}/ec2/home?region={region}#SnapshotDetails:snapshotId={resource_id}"
+                case "eni":
+                    ec2 = boto3.client("ec2", region_name=region)
+                    if ec2.describe_network_interfaces(NetworkInterfaceIds=[resource_id])["NetworkInterfaces"]:
+                        return f"{base}/ec2/home?region={region}#NetworkInterface:networkInterfaceId={resource_id}"
+                case "nat":
+                    ec2 = boto3.client("ec2", region_name=region)
+                    if ec2.describe_nat_gateways(NatGatewayIds=[resource_id])["NatGateways"]:
+                        return f"{base}/vpcconsole/home?region={region}#NatGatewayDetails:natGatewayId={resource_id}"
+                # case "fl":
+                #     ec2 = boto3.client("ec2", region_name=region)
+                #     if ec2.describe_flow_logs(FlowLogIds=[resource_id])["FlowLogs"]:
+                #         return f"{base}/vpcconsole/home?region={region}#FlowLogs:flowLogId={resource_id}"
                 case "kms":
                     boto3.client("kms", region_name=region).describe_key(
                         KeyId=resource_id
                     )
                     return f"{base}/kms/home?region={region}#/kms/keys/{resource_id}"
+                # TODO test this
                 case "rds":
                     name = resource_id[3:]
                     if boto3.client("rds", region_name=region).describe_db_instances(

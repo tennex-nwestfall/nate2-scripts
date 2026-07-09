@@ -21,7 +21,9 @@ Opens the AWS Management Console in your browser for a specific service, arn, or
 **Example Alias:**
 
 ```bash
-alias co="console"
+# noglob is so that one can paste in logs arns that end with :*
+# otherwise zsh tries to see the log arn as a glob and fails
+alias co="noglob console"
 # needed for autocomplete
 eval "$(register-python-argcomplete console)"
 ```

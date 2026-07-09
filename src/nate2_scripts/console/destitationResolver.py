@@ -79,7 +79,6 @@ class DestinationResolver:
             "br": f"https://{mdn}{region}.console.aws.amazon.com/bedrock/",
             "config": f"https://{mdn}{region}.console.aws.amazon.com/config/",
             "controltower": f"https://{mdn}{region}.console.aws.amazon.com/controltower/",
-            "ct": f"https://{mdn}{region}.console.aws.amazon.com/controltower/",
             "cognito": f"https://{mdn}{region}.console.aws.amazon.com/cognito/",
             "cloudfront": f"https://{mdn}{region}.console.aws.amazon.com/cloudfront/",
             # cant use cf because it conflicts with cloudformation and I think thats more important
@@ -88,6 +87,8 @@ class DestinationResolver:
             "53": f"https://{mdn}{region}.console.aws.amazon.com/route53/",
             "kms": f"https://{mdn}{region}.console.aws.amazon.com/kms/",
             "secretsmanager": f"https://{mdn}{region}.console.aws.amazon.com/secretsmanager/",
+            # I mistyped it enough that this is here now
+            "secretmanager": f"https://{mdn}{region}.console.aws.amazon.com/secretsmanager/",
             "sm": f"https://{mdn}{region}.console.aws.amazon.com/secretsmanager/",
             "storagegateway": f"https://{mdn}{region}.console.aws.amazon.com/storagegateway/",
             "sgw": f"https://{mdn}{region}.console.aws.amazon.com/storagegateway/",
@@ -95,6 +96,8 @@ class DestinationResolver:
             "ami": f"https://{mdn}{region}.console.aws.amazon.com/ec2/home#Images",
             "elb": f"https://{mdn}{region}.console.aws.amazon.com/ec2/home#LoadBalancers",
             "athena": f"https://{mdn}{region}.console.aws.amazon.com/athena/home#/query-editor",
+            "cloudtrail": f"https://{mdn}{region}.console.aws.amazon.com/cloudtrailv2/",
+            "ct": f"https://{mdn}{region}.console.aws.amazon.com/cloudtrailv2/",
             # unchecked
         }
 

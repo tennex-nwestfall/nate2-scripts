@@ -98,6 +98,7 @@ class ArnResolver:
                 return self.parse_states(account, region, rest)
             case "elasticloadbalancing":
                 return self.parse_elb(account, region, rest)
+                # unchecked
             case _:
                 print(
                     f"Error: Unsupported service '{service}' in ARN: 'arn:aws:{service}:*",
@@ -123,16 +124,17 @@ class ArnResolver:
         resource_type, resource_id = split(rest, 1, "/")
         match resource_type:
             case "role":
+                # service-linked roles have a path prefix (e.g. aws-service-role/svc/RoleName)
                 try:
-                    boto3.client("iam").get_role(RoleName=resource_id)
-                    return f"https://{self.mdn}us-east-1.console.aws.amazon.com/iam/home#/roles/{resource_id}"
+                    role_name = resource_id.split("/")[-1] if resource_id else ""
+                    boto3.client("iam").get_role(RoleName=role_name)
+                    return f"https://{self.mdn}us-east-1.console.aws.amazon.com/iam/home#/roles/{role_name}"
                 except ClientError as e:
                     print(
                         f"Error: Unable to access IAM role '{resource_id}' on account {self.account}: {e}",
                         file=sys.stderr,
                     )
                     sys.exit(1)
-            # TODO test
             case "user":
                 try:
                     boto3.client("iam").get_user(UserName=resource_id)
@@ -170,62 +172,64 @@ class ArnResolver:
         base = f"https://{self.mdn}{region}.console.aws.amazon.com"
         try:
             match resource_type:
+                # not useful as I couldn't find it in console but
+                # I am keeping it here in case it becomes useful later
+                # case "vpc":
+                #     result = client.describe_vpcs(VpcIds=[resource_id])
+                #     if not result["Vpcs"]:
+                #         raise ValueError(f"VPC '{resource_id}' not found.")
+                #     return f"{base}/vpcconsole/home?region={region}#VpcDetails:VpcId={resource_id}"
+                # case "security-group":
+                #     result = client.describe_security_groups(GroupIds=[resource_id])
+                #     if not result["SecurityGroups"]:
+                #         raise ValueError(f"Security group '{resource_id}' not found.")
+                #     return f"{base}/ec2/home?region={region}#SecurityGroup:groupId={resource_id}"
+                # case "volume":
+                #     result = client.describe_volumes(VolumeIds=[resource_id])
+                #     if not result["Volumes"]:
+                #         raise ValueError(f"Volume '{resource_id}' not found.")
+                #     return f"{base}/ec2/home?region={region}#VolumeDetails:volumeId={resource_id}"
+                # case "image":
+                #     result = client.describe_images(ImageIds=[resource_id])
+                #     if not result["Images"]:
+                #         raise ValueError(f"AMI '{resource_id}' not found.")
+                #     return f"{base}/ec2/home?region={region}#ImageDetails:imageId={resource_id}"
+                # case "launch-template":
+                #     result = client.describe_launch_templates(
+                #         LaunchTemplateIds=[resource_id]
+                #     )
+                #     if not result["LaunchTemplates"]:
+                #         raise ValueError(f"Launch template '{resource_id}' not found.")
+                #     return f"{base}/ec2/home?region={region}#LaunchTemplateDetails:launchTemplateId={resource_id}"
+                # case "snapshot":
+                #     result = client.describe_snapshots(SnapshotIds=[resource_id])
+                #     if not result["Snapshots"]:
+                #         raise ValueError(f"Snapshot '{resource_id}' not found.")
+                #     return f"{base}/ec2/home?region={region}#SnapshotDetails:snapshotId={resource_id}"
+                # case "route-table":
+                #     result = client.describe_route_tables(RouteTableIds=[resource_id])
+                #     if not result["RouteTables"]:
+                #         raise ValueError(f"Route table '{resource_id}' not found.")
+                #     return f"{base}/vpcconsole/home?region={region}#RouteTableDetails:RouteTableId={resource_id}"
+                # case "network-interface":
+                #     result = client.describe_network_interfaces(
+                #         NetworkInterfaceIds=[resource_id]
+                #     )
+                #     if not result["NetworkInterfaces"]:
+                #         raise ValueError(
+                #             f"Network interface '{resource_id}' not found."
+                #         )
+                #     return f"{base}/ec2/home?region={region}#NetworkInterface:networkInterfaceId={resource_id}"
                 case "instance":
                     result = client.describe_instances(InstanceIds=[resource_id])
                     if not result["Reservations"]:
                         raise ValueError(f"Instance '{resource_id}' not found.")
                     return f"{base}/ec2/home?region={region}#InstanceDetails:instanceId={resource_id}"
-                case "vpc":
-                    result = client.describe_vpcs(VpcIds=[resource_id])
-                    if not result["Vpcs"]:
-                        raise ValueError(f"VPC '{resource_id}' not found.")
-                    return f"{base}/vpcconsole/home?region={region}#VpcDetails:VpcId={resource_id}"
                 case "subnet":
                     result = client.describe_subnets(SubnetIds=[resource_id])
                     if not result["Subnets"]:
                         raise ValueError(f"Subnet '{resource_id}' not found.")
                     return f"{base}/vpcconsole/home?region={region}#SubnetDetails:subnetId={resource_id}"
-                case "security-group":
-                    result = client.describe_security_groups(GroupIds=[resource_id])
-                    if not result["SecurityGroups"]:
-                        raise ValueError(f"Security group '{resource_id}' not found.")
-                    return f"{base}/ec2/home?region={region}#SecurityGroup:groupId={resource_id}"
-                case "volume":
-                    result = client.describe_volumes(VolumeIds=[resource_id])
-                    if not result["Volumes"]:
-                        raise ValueError(f"Volume '{resource_id}' not found.")
-                    return f"{base}/ec2/home?region={region}#VolumeDetails:volumeId={resource_id}"
-                case "image":
-                    result = client.describe_images(ImageIds=[resource_id])
-                    if not result["Images"]:
-                        raise ValueError(f"AMI '{resource_id}' not found.")
-                    return f"{base}/ec2/home?region={region}#ImageDetails:imageId={resource_id}"
-                case "snapshot":
-                    result = client.describe_snapshots(SnapshotIds=[resource_id])
-                    if not result["Snapshots"]:
-                        raise ValueError(f"Snapshot '{resource_id}' not found.")
-                    return f"{base}/ec2/home?region={region}#SnapshotDetails:snapshotId={resource_id}"
-                case "launch-template":
-                    result = client.describe_launch_templates(
-                        LaunchTemplateIds=[resource_id]
-                    )
-                    if not result["LaunchTemplates"]:
-                        raise ValueError(f"Launch template '{resource_id}' not found.")
-                    return f"{base}/ec2/home?region={region}#LaunchTemplateDetails:launchTemplateId={resource_id}"
-                case "route-table":
-                    result = client.describe_route_tables(RouteTableIds=[resource_id])
-                    if not result["RouteTables"]:
-                        raise ValueError(f"Route table '{resource_id}' not found.")
-                    return f"{base}/vpcconsole/home?region={region}#RouteTableDetails:RouteTableId={resource_id}"
-                case "network-interface":
-                    result = client.describe_network_interfaces(
-                        NetworkInterfaceIds=[resource_id]
-                    )
-                    if not result["NetworkInterfaces"]:
-                        raise ValueError(
-                            f"Network interface '{resource_id}' not found."
-                        )
-                    return f"{base}/ec2/home?region={region}#NetworkInterface:networkInterfaceId={resource_id}"
                 case "natgateway":
                     result = client.describe_nat_gateways(NatGatewayIds=[resource_id])
                     if not result["NatGateways"]:
@@ -332,6 +336,7 @@ class ArnResolver:
                             f"ECS cluster '{resource_id}' not found or not active."
                         )
                     return f"{base}/{resource_id}/services?region={region}"
+                # TODO test this
                 case "service":
                     cluster, service_name = split(resource_id, 1, "/")
                     result = client.describe_services(
@@ -345,6 +350,7 @@ class ArnResolver:
                             f"ECS service '{service_name}' in cluster '{cluster}' not found or not active."
                         )
                     return f"{base}/{cluster}/services/{service_name}?region={region}"
+                # TODO test this
                 case "task":
                     cluster, task_id = split(resource_id, 1, "/")
                     result = client.describe_tasks(cluster=cluster, tasks=[task_id])
@@ -353,6 +359,16 @@ class ArnResolver:
                             f"ECS task '{task_id}' in cluster '{cluster}' not found."
                         )
                     return f"{base}/{cluster}/tasks/{task_id}?region={region}"
+                case "task-definition":
+                    family, revision = split(resource_id, 1, ":")
+                    td = f"{family}:{revision}" if revision else family
+                    result = client.describe_task_definition(taskDefinition=td)
+                    if not result.get("taskDefinition"):
+                        raise ValueError(f"ECS task definition '{td}' not found.")
+                    base_td = f"https://{self.mdn}{region}.console.aws.amazon.com/ecs/v2/task-definitions"
+                    if revision:
+                        return f"{base_td}/{family}/{revision}?region={region}"
+                    return f"{base_td}/{family}?region={region}"
                 case _:
                     self._unsupported("ecs", resource_type, rest)
         except ClientError as e:
@@ -422,6 +438,7 @@ class ArnResolver:
                             f"Batch job definition '{resource_id}' not found."
                         )
                     return f"{base}#job-definition/detail/{arn}"
+                # TODO TEST THIS
                 case "job":
                     result = client.describe_jobs(jobs=[resource_id])
                     if not result.get("jobs"):
@@ -460,6 +477,7 @@ class ArnResolver:
                     return (
                         f"{base}#/statemachines/view/{urllib.parse.quote(arn, safe='')}"
                     )
+                # TODO test this
                 case "execution":
                     arn = f"arn:aws:states:{region}:{account}:execution:{resource_id}"
                     client.describe_execution(executionArn=arn)
@@ -476,11 +494,13 @@ class ArnResolver:
         arn = f"arn:aws:elasticloadbalancing:{region}:{account}:{rest}"
         try:
             match resource_type:
+                # TODO test this
                 case "loadbalancer":
                     result = client.describe_load_balancers(LoadBalancerArns=[arn])
                     if not result.get("LoadBalancers"):
                         raise ValueError(f"Load balancer '{resource_id}' not found.")
                     return f"{base}#LoadBalancers:loadBalancerArn={arn}"
+                # TODO test this
                 case "targetgroup":
                     result = client.describe_target_groups(TargetGroupArns=[arn])
                     if not result.get("TargetGroups"):
@@ -492,152 +512,3 @@ class ArnResolver:
             self._access_fail(f"ELB {resource_type} '{resource_id}'", e)
         except ValueError as e:
             self._access_fail(f"ELB {resource_type} '{resource_id}'", e)
-
-    # def verify(self, arn: ParsedArn) -> None:
-    #     region = arn.region
-    #     key = (arn.service, arn.resource_type)
-
-    #     try:
-    #         if key == ("s3", ""):
-    #             boto3.client("s3").head_ucket(Bucket=arn.resource_id)
-    #         elif key == ("lambda", "function"):
-    #             boto3.client("lambda", region_name=region).get_function(
-    #                 FunctionName=arn.resource_id
-    #             )
-    #         elif key == ("ec2", "instance"):
-    #             result = boto3.client("ec2", region_name=region).describe_instances(
-    #                 InstanceIds=[arn.resource_id]
-    #             )
-    #             if not result["Reservations"]:
-    #                 raise ValueError(f"Instance '{arn.resource_id}' not found.")
-    #         elif key == ("ec2", "vpc"):
-    #             result = boto3.client("ec2", region_name=region).describe_vpcs(
-    #                 VpcIds=[arn.resource_id]
-    #             )
-    #             if not result["Vpcs"]:
-    #                 raise ValueError(f"VPC '{arn.resource_id}' not found.")
-    #         elif key == ("ec2", "subnet"):
-    #             result = boto3.client("ec2", region_name=region).describe_subnets(
-    #                 SubnetIds=[arn.resource_id]
-    #             )
-    #             if not result["Subnets"]:
-    #                 raise ValueError(f"Subnet '{arn.resource_id}' not found.")
-    #         elif key == ("ec2", "security-group"):
-    #             result = boto3.client(
-    #                 "ec2", region_name=region
-    #             ).describe_security_groups(GroupIds=[arn.resource_id])
-    #             if not result["SecurityGroups"]:
-    #                 raise ValueError(f"Security group '{arn.resource_id}' not found.")
-    #         elif key == ("iam", "role"):
-    #             boto3.client("iam").get_role(RoleName=arn.resource_id)
-    #         elif key == ("iam", "user"):
-    #             boto3.client("iam").get_user(UserName=arn.resource_id)
-    #         elif key == ("rds", "db"):
-    #             boto3.client("rds", region_name=region).describe_db_instances(
-    #                 DBInstanceIdentifier=arn.resource_id
-    #             )
-    #         elif key == ("rds", "cluster"):
-    #             boto3.client("rds", region_name=region).describe_db_clusters(
-    #                 DBClusterIdentifier=arn.resource_id
-    #             )
-    #         elif key == ("ecs", "cluster"):
-    #             result = boto3.client("ecs", region_name=region).describe_clusters(
-    #                 clusters=[arn.resource_id]
-    #             )
-    #             active = [
-    #                 c for c in result.get("clusters", []) if c["status"] == "ACTIVE"
-    #             ]
-    #             if not active:
-    #                 raise ValueError(
-    #                     f"ECS cluster '{arn.resource_id}' not found or not active."
-    #                 )
-    #         elif key == ("ecs", "service"):
-    #             cluster, service_name = arn.resource_id.split("/", 1)
-    #             result = boto3.client("ecs", region_name=region).describe_services(
-    #                 cluster=cluster, services=[service_name]
-    #             )
-    #             active = [
-    #                 s for s in result.get("services", []) if s["status"] == "ACTIVE"
-    #             ]
-    #             if not active:
-    #                 raise ValueError(
-    #                     f"ECS service '{service_name}' in cluster '{cluster}' not found or not active."
-    #                 )
-    #         elif key == ("eks", "cluster"):
-    #             boto3.client("eks", region_name=region).describe_cluster(
-    #                 name=arn.resource_id
-    #             )
-    #         elif key == ("secretsmanager", "secret"):
-    #             boto3.client("secretsmanager", region_name=region).describe_secret(
-    #                 SecretId=arn.arn
-    #             )
-    #         elif key == ("logs", "log-group"):
-    #             result = boto3.client("logs", region_name=region).describe_log_groups(
-    #                 logGroupNamePrefix=arn.resource_id
-    #             )
-    #             matches = [
-    #                 lg
-    #                 for lg in result.get("logGroups", [])
-    #                 if lg["logGroupName"] == arn.resource_id
-    #             ]
-    #             if not matches:
-    #                 raise ValueError(f"Log group '{arn.resource_id}' not found.")
-    #         else:
-    #             print(
-    #                 f"Error: Unsupported ARN type '{arn.service}/{arn.resource_type}'. "
-    #                 "Supported: s3 buckets, lambda functions, ec2 instances/vpcs/subnets/security-groups, "
-    #                 "iam roles/users, rds db/clusters, ecs clusters/services, eks clusters, "
-    #                 "secretsmanager secrets, cloudwatch log groups.",
-    #                 file=sys.stderr,
-    #             )
-    #             sys.exit(1)
-    #     except ClientError as e:
-    #         print(f"Error: {e.response['Error']['Message']}", file=sys.stderr)
-    #         sys.exit(1)
-    #     except ValueError as e:
-    #         print(f"Error: {e}", file=sys.stderr)
-    #         sys.exit(1)
-
-    # def to_console_url(self, arn: ParsedArn) -> str:
-    #     region = arn.region
-    #     key = (arn.service, arn.resource_type)
-
-    #     if key == ("s3", ""):
-    #         return f"https://s3.console.aws.amazon.com/s3/buckets/{arn.resource_id}"
-    #     if key == ("lambda", "function"):
-    #         return f"https://{region}.console.aws.amazon.com/lambda/home?region={region}#/functions/{arn.resource_id}"
-    #     if key == ("ec2", "instance"):
-    #         return f"https://{region}.console.aws.amazon.com/ec2/v2/home?region={region}#Instances:instanceId={arn.resource_id}"
-    #     if key == ("ec2", "vpc"):
-    #         return f"https://{region}.console.aws.amazon.com/vpcconsole/home?region={region}#VpcDetails:VpcId={arn.resource_id}"
-    #     if key == ("ec2", "subnet"):
-    #         return f"https://{region}.console.aws.amazon.com/vpcconsole/home?region={region}#SubnetDetails:subnetId={arn.resource_id}"
-    #     if key == ("ec2", "security-group"):
-    #         return f"https://{region}.console.aws.amazon.com/ec2/v2/home?region={region}#SecurityGroups:groupId={arn.resource_id}"
-    #     if key == ("iam", "role"):
-    #         return f"https://us-east-1.console.aws.amazon.com/iam/home#/roles/{arn.resource_id}"
-    #     if key == ("iam", "user"):
-    #         return f"https://us-east-1.console.aws.amazon.com/iam/home#/users/{arn.resource_id}"
-    #     if key == ("rds", "db"):
-    #         return f"https://{region}.console.aws.amazon.com/rds/home?region={region}#database:id={arn.resource_id}"
-    #     if key == ("rds", "cluster"):
-    #         return f"https://{region}.console.aws.amazon.com/rds/home?region={region}#database:id={arn.resource_id};is-cluster=true"
-    #     if key == ("ecs", "cluster"):
-    #         return f"https://{region}.console.aws.amazon.com/ecs/v2/clusters/{arn.resource_id}"
-    #     if key == ("ecs", "service"):
-    #         cluster, service_name = arn.resource_id.split("/", 1)
-    #         return f"https://{region}.console.aws.amazon.com/ecs/v2/clusters/{cluster}/services/{service_name}"
-    #     if key == ("eks", "cluster"):
-    #         return f"https://{region}.console.aws.amazon.com/eks/home?region={region}#/clusters/{arn.resource_id}"
-    #     if key == ("secretsmanager", "secret"):
-    #         name = re.sub(r"-[A-Za-z0-9]{6}$", "", arn.resource_id)
-    #         return f"https://{region}.console.aws.amazon.com/secretsmanager/home?region={region}#!/secret?name={urllib.parse.quote(name, safe='')}"
-    #     if key == ("logs", "log-group"):
-    #         encoded = urllib.parse.quote(arn.resource_id, safe="")
-    #         return f"https://{region}.console.aws.amazon.com/cloudwatch/home?region={region}#logsV2:log-groups/log-group/{encoded}"
-    #     # verify catches unsupported types first, but guard just in case
-    #     print(
-    #         f"Error: Unsupported ARN type '{arn.service}/{arn.resource_type}'.",
-    #         file=sys.stderr,
-    #     )
-    #     sys.exit(1)
