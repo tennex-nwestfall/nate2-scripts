@@ -148,7 +148,7 @@ def main() -> None:
             f"{profile_name} cache is multi session with domain: {multisession_domain_name}"
         )
 
-    resolver = DestinationResolver(region_cache, multisession_domain_name)
+    resolver = DestinationResolver(account_id, region_cache, multisession_domain_name)
 
     destination = resolver.parse_destination(args.service, args.region)
 

@@ -8,13 +8,17 @@ from nate2_scripts.console.regionCache import DEFAULT_REGION, RegionCache
 from botocore.exceptions import ClientError
 import urllib.parse
 
+from nate2_scripts.console.resourceIdResolver import ResourceIdResolver
+
 
 class DestinationResolver:
 
+    account: str
     region_cache: RegionCache
     mdn: str
 
-    def __init__(self, region_cache: RegionCache, multisession_domain_name: str):
+    def __init__(self, account: str, region_cache: RegionCache, multisession_domain_name: str):
+        self.account = account
         self.region_cache = region_cache
         self.mdn = multisession_domain_name
 
@@ -32,14 +36,13 @@ class DestinationResolver:
         if not service:
             return f"https://{self.mdn}{default_region}.console.aws.amazon.com/"
         
-        # arn_dest = ArnResolver().try_parse_arn(service)
-        # if arn_dest:
-        #     return arn_dest
+        arn_dest = ArnResolver(self.account,self.mdn).try_parse_arn(service)
+        if arn_dest:
+            return arn_dest
 
-        # url = ResourceIdResolver.to_console_url(service, default_region)
-        # if url:
-        #     ResourceIdResolver.verify(service, default_region)
-        #     return url
+        id_dest = ResourceIdResolver(self.region_cache, self.mdn).try_parse_resource_id(service)
+        if id_dest:
+            return id_dest
         
         if service.lower() not in service_urls:
             print(f"Error: Unknown service '{service}'.", file=sys.stderr)
@@ -91,85 +94,8 @@ class DestinationResolver:
             "acl": f"https://{mdn}{region}.console.aws.amazon.com/vpcconsole/home#acls:",
             "ami": f"https://{mdn}{region}.console.aws.amazon.com/ec2/home#Images",
             "elb": f"https://{mdn}{region}.console.aws.amazon.com/ec2/home#LoadBalancers",
+            "athena": f"https://{mdn}{region}.console.aws.amazon.com/athena/home#/query-editor",
             # unchecked
         }
 
 
-class ResourceIdResolver:
-    _KMS_UUID = re.compile(
-        r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
-    )
-    _KMS_MRK = re.compile(r"^mrk-[0-9a-f]{32}$")
-
-    @staticmethod
-    def to_console_url(resource_id: str, region: str) -> str | None:
-        if re.match(r"^i-[0-9a-f]{8,17}$", resource_id):
-            return f"https://{region}.console.aws.amazon.com/ec2/v2/home?region={region}#Instances:instanceId={resource_id}"
-        if re.match(r"^vpc-[0-9a-f]{8,17}$", resource_id):
-            return f"https://{region}.console.aws.amazon.com/vpcconsole/home?region={region}#VpcDetails:VpcId={resource_id}"
-        if re.match(r"^subnet-[0-9a-f]{8,17}$", resource_id):
-            return f"https://{region}.console.aws.amazon.com/vpcconsole/home?region={region}#SubnetDetails:subnetId={resource_id}"
-        if re.match(r"^sg-[0-9a-f]{8,17}$", resource_id):
-            return f"https://{region}.console.aws.amazon.com/ec2/v2/home?region={region}#SecurityGroups:groupId={resource_id}"
-        if re.match(r"^ami-[0-9a-f]{8,17}$", resource_id):
-            return f"https://{region}.console.aws.amazon.com/ec2/home?region={region}#Images:imageId={resource_id}"
-        if re.match(r"^lt-[0-9a-f]{8,17}$", resource_id):
-            return f"https://{region}.console.aws.amazon.com/ec2/home?region={region}#LaunchTemplates:launchTemplateId={resource_id}"
-        if re.match(r"^rtb-[0-9a-f]{8,17}$", resource_id):
-            return f"https://{region}.console.aws.amazon.com/vpcconsole/home?region={region}#RouteTable:routeTableId={resource_id}"
-        if ResourceIdResolver._KMS_UUID.match(
-            resource_id
-        ) or ResourceIdResolver._KMS_MRK.match(resource_id):
-            return f"https://{region}.console.aws.amazon.com/kms/home?region={region}#/kms/keys/{resource_id}"
-        return None
-
-    @staticmethod
-    def verify(resource_id: str, region: str) -> None:
-        ec2 = boto3.client("ec2", region_name=region)
-        try:
-            if resource_id.startswith("i-"):
-                result = ec2.describe_instances(InstanceIds=[resource_id])
-                if not result["Reservations"]:
-                    raise ValueError(f"Instance '{resource_id}' not found.")
-            elif resource_id.startswith("vpc-"):
-                result = ec2.describe_vpcs(VpcIds=[resource_id])
-                if not result["Vpcs"]:
-                    raise ValueError(f"VPC '{resource_id}' not found.")
-            elif resource_id.startswith("subnet-"):
-                result = ec2.describe_subnets(SubnetIds=[resource_id])
-                if not result["Subnets"]:
-                    raise ValueError(f"Subnet '{resource_id}' not found.")
-            elif resource_id.startswith("sg-"):
-                result = ec2.describe_security_groups(GroupIds=[resource_id])
-                if not result["SecurityGroups"]:
-                    raise ValueError(f"Security group '{resource_id}' not found.")
-            elif resource_id.startswith("ami-"):
-                result = ec2.describe_images(ImageIds=[resource_id])
-                if not result["Images"]:
-                    raise ValueError(f"AMI '{resource_id}' not found.")
-            elif resource_id.startswith("lt-"):
-                result = ec2.describe_launch_templates(LaunchTemplateIds=[resource_id])
-                if not result["LaunchTemplates"]:
-                    raise ValueError(f"Launch template '{resource_id}' not found.")
-            elif resource_id.startswith("rtb-"):
-                result = ec2.describe_route_tables(RouteTableIds=[resource_id])
-                if not result["RouteTables"]:
-                    raise ValueError(f"Route table '{resource_id}' not found.")
-            elif ResourceIdResolver._KMS_UUID.match(
-                resource_id
-            ) or ResourceIdResolver._KMS_MRK.match(resource_id):
-                boto3.client("kms", region_name=region).describe_key(KeyId=resource_id)
-            elif resource_id.startswith("db/"):
-                boto3.client("rds", region_name=region).describe_db_instances(
-                    DBInstanceIdentifier=resource_id[3:]
-                )
-            elif resource_id.startswith("role/"):
-                boto3.client("iam").get_role(RoleName=resource_id[5:])
-            elif resource_id.startswith("usr/"):
-                boto3.client("iam").get_user(UserName=resource_id[4:])
-        except ClientError as e:
-            print(f"Error: {e.response['Error']['Message']}", file=sys.stderr)
-            sys.exit(1)
-        except ValueError as e:
-            print(f"Error: {e}", file=sys.stderr)
-            sys.exit(1)
