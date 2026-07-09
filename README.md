@@ -2,20 +2,17 @@
 
 Utility scripts for AWS development on macOS.
 
-To run the scripts, move the script into a folder on your path.
-Nate2 has them in `~/.local/bin`.
-
-Make sure it is on your path:
+To install run:
 
 ```bash
-export PATH="$HOME/.local/bin:$PATH"
+pip install git+https://github.com/tennex-nwestfall/scripts.git
 ```
 
 ## Scripts
 
-### `console.py`
+### `console`
 
-Opens the AWS Management Console in your browser for a specific service, using federated sign-in from your current AWS credentials.
+Opens the AWS Management Console in your browser for a specific service, arn, or resource id, using federated sign-in from your current AWS credentials. Supports multi-session via searching browser history sqlite databases.
 
 **Requirements:**
 
@@ -24,9 +21,9 @@ Opens the AWS Management Console in your browser for a specific service, using f
 **Example Alias:**
 
 ```bash
-alias console="console.py"
+alias co="console"
 # needed for autocomplete
-eval "$(register-python-argcomplete console.py)"
+eval "$(register-python-argcomplete console)"
 ```
 
 **Usage:**
@@ -40,14 +37,24 @@ console
 # open ec2 page of the role/account
 console ec2
 # open s3 page of the role/account
-console ec2
+console s3
 # open lambda page of the role/account in us-west-2
 console lambda -r us-west-2
+# open instance id page of the role/account in  
+# whatever region that instance is in 
+console i-0123456789abcdef
+# open the console page for the resource the ARN points to
+console arn:aws:ec2:us-east-1:012345678967:instance/i-0123456789abcdef
 ```
 
-**Supported services:** `ec2`, `lambda`, `s3`, `iam`, `cloudwatch`, `rds`, `ecs`, `eks`, `vpc`, `batch`
+**Supported services:** `ec2`, `lambda`, `s3`, `iam`, `cloudwatch` / `cw`, `logs`, `cloudformation` / `cf`, `rds`, `ecs`, `eks`, `ecr`, `vpc`, `sg`, `acl`, `batch`, `sns`, `sqs`, `step` (Step Functions), `dynamo`, `bedrock` / `br`, `kms`, `secretsmanager` / `sm`, `elb`, `ami`, `athena`, `cloudfront` / `front`, `route` / `53` (Route 53), `cognito`, `config`, `controltower` / `ct`, `storagegateway` / `sgw`, `cost`, `support`
 
-**All Regions Supported:** autocomplete contains `us-east-1`, `us-east-2`, `us-west-1`, `us-west-2`
+**Supported Instance Ids:** `i-*` (EC2), `vpc-*`, `subnet-*`, `sg-*` (security group), `ami-*`, `lt-*` (launch template), `rtb-*` (route table), `db/*` (RDS), `role/*` (IAM role), `usr/*` (IAM user), KMS key UUID, KMS MRK (`mrk-*`)
+
+**Supported ARNs:** `ec2`, `iam` (role, user), `lambda`, `logs` (CloudWatch Logs), `rds`, `s3`, `secretsmanager`, `ecs`, `eks`, `sns`, `sqs`, `batch`, `dynamodb`, `states` (Step Functions), `elasticloadbalancing`
+
+**All Regions Supported:**
+Edit `console-regions.json` to change which regions are evaluated and to set the default one
 
 ---
 
