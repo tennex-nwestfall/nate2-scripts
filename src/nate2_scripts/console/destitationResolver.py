@@ -83,7 +83,7 @@ class DestinationResolver:
             "cloudfront": f"https://{mdn}{region}.console.aws.amazon.com/cloudfront/",
             # cant use cf because it conflicts with cloudformation and I think thats more important
             "front": f"https://{mdn}{region}.console.aws.amazon.com/cloudfront/",
-            "route": f"https://{mdn}{region}.console.aws.amazon.com/route53/",
+            "route53": f"https://{mdn}{region}.console.aws.amazon.com/route53/",
             "53": f"https://{mdn}{region}.console.aws.amazon.com/route53/",
             "kms": f"https://{mdn}{region}.console.aws.amazon.com/kms/",
             "secretsmanager": f"https://{mdn}{region}.console.aws.amazon.com/secretsmanager/",

@@ -1,3 +1,7 @@
+
+[![PyPI version](https://img.shields.io/pypi/v/nate2-scripts)](https://pypi.org/project/nate2-scripts/)
+[![License](https://img.shields.io/github/license/tennex-nwestfall/nate2-scripts)](https://github.com/tennex-nwestfall/nate2-scripts/blob/main/LICENSE)
+
 # Nate2's Scripts
 
 Utility scripts for AWS development on macOS.
@@ -5,7 +9,7 @@ Utility scripts for AWS development on macOS.
 To install run:
 
 ```bash
-pip install git+https://github.com/tennex-nwestfall/scripts.git
+pip install nate2-scripts
 ```
 
 ## Scripts
