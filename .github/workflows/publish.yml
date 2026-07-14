@@ -1,0 +1,64 @@
+name: Publish to PyPI
+
+# Trigger this workflow on every push to the main branch.
+# To prevent unauthorized publishes, protect main with branch protection rules
+# (require PRs + approvals) and add required reviewers to the "pypi" environment.
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build distribution
+    runs-on: ubuntu-latest
+
+    steps:
+      # GitHub Actions run on fresh virtual machines that have no knowledge of your code.
+      # This step clones your repository into the runner so subsequent steps can access your files.
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install Hatch
+        run: pip install hatch
+
+      # Produces a source distribution (sdist) and a wheel in the dist/ directory.
+      # The version published is whatever is set in pyproject.toml — bump it before
+      # merging to main, otherwise PyPI will reject a duplicate version.
+      - name: Build package
+        run: hatch build
+
+      # Pass the built artifacts to the publish job via GitHub's artifact storage.
+      - name: Upload distribution artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    name: Publish to PyPI
+    needs: build  # only runs after the build job succeeds
+    runs-on: ubuntu-latest
+    # The "pypi" environment can be configured in GitHub (Settings → Environments)
+    # to require manual approval before this job runs, adding an extra gate on publishing.
+    environment:
+      name: pypi
+      url: https://pypi.org/p/nate2-scripts
+    permissions:
+      id-token: write  # required for Trusted Publishing (OIDC) — no API token needed
+
+    steps:
+      - name: Download distribution artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      # Uses PyPA's official action with Trusted Publishing (OIDC).
+      # PyPI must be configured with a Trusted Publisher pointing at this repo/workflow.
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

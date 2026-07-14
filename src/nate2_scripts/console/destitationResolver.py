@@ -4,7 +4,8 @@ import sys
 from dataclasses import dataclass
 import boto3
 from nate2_scripts.console.arnResolver import ArnResolver
-from nate2_scripts.console.regionCache import DEFAULT_REGION, RegionCache
+from nate2_scripts.console.nameResolver import NameResolver
+from nate2_scripts.console.regionCache import RegionCache
 from botocore.exceptions import ClientError
 import urllib.parse
 
@@ -36,6 +37,9 @@ class DestinationResolver:
         if not service:
             return f"https://{self.mdn}{default_region}.console.aws.amazon.com/"
         
+        if service.lower() in service_urls:
+            return service_urls[service.lower()]
+        
         arn_dest = ArnResolver(self.account,self.mdn).try_parse_arn(service)
         if arn_dest:
             return arn_dest
@@ -44,10 +48,13 @@ class DestinationResolver:
         if id_dest:
             return id_dest
         
-        if service.lower() not in service_urls:
-            print(f"Error: Unknown service '{service}'.", file=sys.stderr)
-            sys.exit(1)
-        return service_urls[service.lower()]
+        name_dest = NameResolver(self.region_cache, self.mdn).resolve_name(service)
+        if name_dest:
+            return name_dest
+        
+        print(f"Error: Unknown service '{service}'.", file=sys.stderr)
+        sys.exit(1)
+
 
     @staticmethod
     def _get_services(region: str, mdn: str = "") -> dict[str, str]:
@@ -98,6 +105,8 @@ class DestinationResolver:
             "athena": f"https://{mdn}{region}.console.aws.amazon.com/athena/home#/query-editor",
             "cloudtrail": f"https://{mdn}{region}.console.aws.amazon.com/cloudtrailv2/",
             "ct": f"https://{mdn}{region}.console.aws.amazon.com/cloudtrailv2/",
+            "fsx": f"https://{mdn}{region}.console.aws.amazon.com/fsx/",
+            "subnet": f"https://{mdn}{region}.console.aws.amazon.com/vpcconsole/home#subnets:",
             # unchecked
         }
 
