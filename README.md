@@ -60,7 +60,7 @@ console arn:aws:ec2:us-east-1:012345678967:instance/i-0123456789abcdef
 **Supported ARNs:** `ec2`, `iam` (role, user), `lambda`, `logs` (CloudWatch Logs), `rds`, `s3`, `secretsmanager`, `ecs`, `eks`, `sns`, `sqs`, `batch`, `dynamodb`, `states` (Step Functions), `elasticloadbalancing`
 
 **All Regions Supported:**
-Edit `console-regions.json` to change which regions are evaluated and to set the default one
+Edit `~/.local/state/console-regions.json` to change which regions are evaluated and to set the default one
 
 ---
 
@@ -78,6 +78,9 @@ alias cdk="bing-wrapper.py --end --pattern \"(y/n)\" --sound-end /System/Library
 
 # wraps nextflow to play a sound when done
 alias nextflow="bing-wrapper.py --end -- nextflow"
+
+# needed for autocomplete of bing-wrapper and the inner command
+eval "$(bing-wrapper --autocomplete)"
 ```
 
 **Options:**

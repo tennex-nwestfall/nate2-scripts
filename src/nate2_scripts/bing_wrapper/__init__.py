@@ -156,8 +156,18 @@ def main() -> None:
         type=str,
         default="/System/Library/Sounds/Glass.aiff",
     )
+    parser.add_argument(
+        "--autocomplete",
+        help="return autocomplete scripts",
+        action="store_true",
+    )
 
     args = parser.parse_args()
+
+    if args.autocomplete:
+        script = os.path.join(os.path.dirname(__file__), "autocomplete.sh")
+        print(open(script).read())
+        sys.exit(0)
 
     if not args.command:
         parser.print_help()

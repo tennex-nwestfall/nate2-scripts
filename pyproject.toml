@@ -19,5 +19,8 @@ bing-wrapper = "nate2_scripts.bing_wrapper:main"
 [tool.hatch.build.targets.wheel]
 packages = ["src/nate2_scripts"]
 
+[tool.hatch.build.targets.wheel.force-include]
+"src/nate2_scripts/bing_wrapper/autocomplete.sh" = "nate2_scripts/bing_wrapper/autocomplete.sh"
+
 [project.urls]
 Homepage = "https://github.com/tennex-nwestfall/nate2-scripts"

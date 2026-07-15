@@ -115,14 +115,15 @@ def parse_args(region_cache: RegionCache) -> argparse.Namespace:
 
 
 def main() -> None:
-    profile_name = get_profile()
     region_cache = RegionCache()
+    args = parse_args(region_cache)
+    
+    profile_name = get_profile()
     session_cache = SessionCache()
 
     print("Loading regions from cache:", region_cache.get_regions())
     print("Loading default region from cache:", region_cache.get_default_region())
 
-    args = parse_args(region_cache)
 
     if args.force:
         print("Force passed. Reseting session cache.")
