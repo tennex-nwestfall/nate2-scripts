@@ -8,6 +8,7 @@ import struct
 import subprocess
 import sys
 import termios
+import threading
 import tty
 import argparse
 
@@ -54,6 +55,26 @@ def run(args: argparse.Namespace) -> None:
 
     # ---- parent ----
     os.close(slave_fd)
+
+    # Loop sound-while for the lifetime of the child process.
+    _stop_sound_while = threading.Event()
+    _sound_while_thread = None
+
+    def _play_sound_while_loop() -> None:
+        while not _stop_sound_while.is_set():
+            proc = subprocess.Popen(["afplay", args.sound_while])
+            while proc.poll() is None:
+                if _stop_sound_while.wait(timeout=0.05):
+                    proc.terminate()
+                    try:
+                        proc.wait(timeout=1)
+                    except subprocess.TimeoutExpired:
+                        proc.kill()
+                    return
+
+    if args.sound_while:
+        _sound_while_thread = threading.Thread(target=_play_sound_while_loop, daemon=True)
+        _sound_while_thread.start()
 
     # Propagate terminal resizes to the child (also sends SIGWINCH to it).
     def _sigwinch(signum: int, frame) -> None:
@@ -119,6 +140,10 @@ def run(args: argparse.Namespace) -> None:
 
     _, status = os.waitpid(pid, 0)
 
+    _stop_sound_while.set()
+    if _sound_while_thread is not None:
+        _sound_while_thread.join(timeout=2)
+
     if args.end:
         subprocess.Popen(["afplay", args.sound_end])
     if os.WIFEXITED(status):
@@ -155,6 +180,12 @@ def main() -> None:
         help="change the sound when pattern is seen",
         type=str,
         default="/System/Library/Sounds/Glass.aiff",
+    )
+    parser.add_argument(
+        "--sound-while",
+        help="play sound while command is running",
+        type=str,
+        default="",
     )
     parser.add_argument(
         "--autocomplete",

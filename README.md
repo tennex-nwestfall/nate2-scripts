@@ -1,4 +1,3 @@
-
 [![PyPI version](https://img.shields.io/pypi/v/nate2-scripts)](https://pypi.org/project/nate2-scripts/)
 [![License](https://img.shields.io/github/license/tennex-nwestfall/nate2-scripts)](https://github.com/tennex-nwestfall/nate2-scripts/blob/main/LICENSE)
 
@@ -35,7 +34,7 @@ eval "$(register-python-argcomplete console)"
 **Usage:**
 
 ```bash
-# change to an account/role 
+# change to an account/role
 asp my-aws-role
 
 # open main page of the role/account
@@ -46,8 +45,8 @@ console ec2
 console s3
 # open lambda page of the role/account in us-west-2
 console lambda -r us-west-2
-# open instance id page of the role/account in  
-# whatever region that instance is in 
+# open instance id page of the role/account in
+# whatever region that instance is in
 console i-0123456789abcdef
 # open the console page for the resource the ARN points to
 console arn:aws:ec2:us-east-1:012345678967:instance/i-0123456789abcdef
@@ -85,9 +84,10 @@ eval "$(bing-wrapper --autocomplete)"
 
 **Options:**
 
-| Flag | Description | Default |
-| --- | --- | --- |
-| `--end` | Play a sound when the command exits | off |
-| `--pattern <text>` | Play a sound when `<text>` appears in output (repeatable) | none |
-| `--sound-end <path>` | Sound file to play on exit | `Glass.aiff` |
-| `--sound-pattern <path>` | Sound file to play on pattern match | `Glass.aiff` |
+| Flag                     | Description                                               | Default      |
+| ------------------------ | --------------------------------------------------------- | ------------ |
+| `--end`                  | Play a sound when the command exits                       | off          |
+| `--pattern <text>`       | Play a sound when `<text>` appears in output (repeatable) | none         |
+| `--sound-end <path>`     | Sound file to play on exit                                | `Glass.aiff` |
+| `--sound-pattern <path>` | Sound file to play on pattern match                       | `Glass.aiff` |
+| `--sound-while <path>`   | Sound file to play on while the command runs              | none         |

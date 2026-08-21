@@ -107,6 +107,9 @@ class DestinationResolver:
             "ct": f"https://{mdn}{region}.console.aws.amazon.com/cloudtrailv2/",
             "fsx": f"https://{mdn}{region}.console.aws.amazon.com/fsx/",
             "subnet": f"https://{mdn}{region}.console.aws.amazon.com/vpcconsole/home#subnets:",
+            "ssm": f"https://{mdn}{region}.console.aws.amazon.com/systems-manager/",
+            "parameter": f"https://{mdn}{region}.console.aws.amazon.com/systems-manager/parameters/",
+            "ps": f"https://{mdn}{region}.console.aws.amazon.com/systems-manager/parameters/",
             # unchecked
         }
 

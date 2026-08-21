@@ -21,13 +21,14 @@ class NameResolver:
     def resolve_name(self, name: str) -> str | None:
         regions = self.region_cache.get_regions()
 
-        # Priority: 0=logs, 1=ec2, 2=s3, 3=cloudformation
+        # Priority: 0=logs, 1=ec2, 2=s3, 3=cloudformation, 4=lambda
         tasks: list[tuple] = []
         for region in regions:
             tasks.append((0, self._resolve_log_group, name, region))
-            tasks.append((1, self._resolve_ec2_instance, name, region))
+            tasks.append((2, self._resolve_ec2_instance, name, region))
             tasks.append((3, self._resolve_cloudformation_stack, name, region))
-        tasks.append((2, self._resolve_s3_bucket, name))
+            tasks.append((4, self._resolve_lambda_function, name, region))
+        tasks.append((1, self._resolve_s3_bucket, name))
 
         results: dict[int, str] = {}
 
@@ -94,6 +95,12 @@ class NameResolver:
         except Exception:
             pass
         return None
-    
 
-
+    def _resolve_lambda_function(self, name: str, region: str) -> str | None:
+        try:
+            boto3.client("lambda", region_name=region).get_function(FunctionName=name)
+            base = f"https://{self.mdn}{region}.console.aws.amazon.com"
+            return f"{base}/lambda/home?region={region}#/functions/{name}"
+        except ClientError:
+            pass
+        return None

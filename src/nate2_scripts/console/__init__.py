@@ -21,21 +21,55 @@ from nate2_scripts.console.hashGrabber import HashGrabber
 from nate2_scripts.console.regionCache import RegionCache
 from nate2_scripts.console.sessionCache import SessionCache
 
+sts = boto3.client("sts")
+
+
+def get_email() -> str:
+    result = subprocess.run(
+        ["git", "config", "user.email"], capture_output=True, text=True
+    )
+    return result.stdout.strip()
+
 
 def get_account_id() -> str:
-    return boto3.client("sts").get_caller_identity()["Account"]
+    return sts.get_caller_identity()["Account"]
 
 
-def get_credentials() -> dict:
-    result = subprocess.run(
-        ["aws", "configure", "export-credentials"],
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode != 0:
-        print(f"Error: Failed to export credentials.\n{result.stderr}", file=sys.stderr)
+def get_credentials(account_id: str) -> dict:
+    # Check if already in an assumed role with the correct session name
+    identity = sts.get_caller_identity()
+    arn = identity.get("Arn", "")
+    email = get_email()
+    if f"assumed-role/" in arn and arn.endswith(f"/{email}"):
+        result = subprocess.run(
+            ["aws", "configure", "export-credentials"],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode == 0:
+            return json.loads(result.stdout)
+
+    profile = os.environ.get("AWS_PROFILE", "default")
+    session = boto3.Session(profile_name=profile)
+    config = session._session.get_scoped_config()
+
+    role_arn = config.get("role_arn", f"arn:aws:iam::{account_id}:role/OrganizationAccountAccessRole")
+    source_profile = config.get("source_profile")
+
+    if source_profile:
+        source_sts = boto3.Session(profile_name=source_profile).client("sts")
+    else:
+        source_sts = sts
+
+    try:
+        response = source_sts.assume_role(
+            RoleArn=role_arn,
+            RoleSessionName=email,
+        )
+    except Exception as e:
+        print(f"Error: Failed to assume role {role_arn}.\n{e}", file=sys.stderr)
         sys.exit(1)
-    return json.loads(result.stdout)
+    return response["Credentials"]
 
 
 def get_signin_token(creds: dict) -> str:
@@ -117,13 +151,12 @@ def parse_args(region_cache: RegionCache) -> argparse.Namespace:
 def main() -> None:
     region_cache = RegionCache()
     args = parse_args(region_cache)
-    
+
     profile_name = get_profile()
     session_cache = SessionCache()
 
     print("Loading regions from cache:", region_cache.get_regions())
     print("Loading default region from cache:", region_cache.get_default_region())
-
 
     if args.force:
         print("Force passed. Reseting session cache.")
@@ -132,8 +165,8 @@ def main() -> None:
     if args.region:
         print("Default region is now:", args.region)
 
-    creds = get_credentials()
     account_id = get_account_id()
+    creds = get_credentials(account_id)
     hash = session_cache.get_session_hash(profile_name, creds)
 
     multisession_domain_name = ""
@@ -173,3 +206,6 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+# set user to OrganizationAccountAccessRole/nwestfall@tennex.io

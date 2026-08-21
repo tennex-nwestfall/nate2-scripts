@@ -77,14 +77,16 @@ class ResourceIdResolver:
         # keeping it here in case I figure out later
         # if re.match(r"^fl-[0-9a-f]{8,17}$", resource_id):
         #     return "fl"
-        if self._KMS_UUID.match(resource_id) or self._KMS_MRK.match(resource_id):
-            return "kms"
-        if resource_id.startswith("db/"):
-            return "rds"
-        if resource_id.startswith("role/"):
-            return "role"
-        if resource_id.startswith("usr/"):
-            return "user"
+        
+        #   not tested
+        # if self._KMS_UUID.match(resource_id) or self._KMS_MRK.match(resource_id):
+        #     return "kms"
+        # if resource_id.startswith("db/"):
+        #     return "rds"
+        # if resource_id.startswith("role/"):
+        #     return "role"
+        # if resource_id.startswith("usr/"):
+        #     return "user"
         return None
 
     def _resolve_in_region(

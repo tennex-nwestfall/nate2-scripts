@@ -59,9 +59,13 @@ class SessionCache:
 
         # Honour the STS credential expiration if present
         expiration = creds.get("Expiration")
+        print(expiration)
         if expiration:
             try:
-                exp_time = datetime.fromisoformat(expiration.replace("Z", "+00:00"))
+                if isinstance(expiration, datetime):
+                    exp_time = expiration
+                else:
+                    exp_time = datetime.fromisoformat(expiration.replace("Z", "+00:00"))
                 if datetime.now(timezone.utc) >= exp_time:
                     return None
             except ValueError:

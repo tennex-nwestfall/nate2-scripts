@@ -22,7 +22,8 @@ _bing_wrapper() {
       '*--pattern[pattern to listen for]:pattern:' \
       '--sound-end[sound file at end]:file:_files' \
       '--sound-pattern[sound file for pattern]:file:_files' \
-      '--[inner command]:command:_normal' 
+       '--sound-while[sound file for duration of command]:file:_files' \
+      '--[inner command]:command:_normal' \
   fi
 }
 
