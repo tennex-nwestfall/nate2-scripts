@@ -1,0 +1,60 @@
+import re
+
+from nate2_scripts.console.resolvers import Arn, Context, Resolver
+
+
+class S3Resolver(Resolver):
+    def get_service_names(self) -> list[str]:
+        return ["s3"]
+
+    def try_resolve_name(self, context: Context, name: str, search: str) -> str | None:
+        # search query for the S3 is not in the url
+        # so search is unused
+        try:
+            # check that bucket exists before sending link
+            context.session.client("s3").head_bucket(Bucket=name)
+            return f"console.aws.amazon.com/s3/buckets/{name}"
+        except Exception:
+            return None
+
+    def try_resolve_arn(
+        self,
+        context: Context,
+        arn: Arn,
+    ) -> str | None:
+        # not an s3 bucket arn
+        if arn.service != "s3":
+            return None
+
+        return self.get_s3_link_if_valid(context, arn)
+
+    def try_resolve_service(
+        self, context: Context, service: str, search: str
+    ) -> str | None:
+        if service not in self.get_service_names():
+            return None
+        return "console.aws.amazon.com/s3/buckets"
+
+    def try_resolve_id(self, context: Context, id: str) -> str | None:
+        match = re.match(r"^s3://(.+)", id)
+        if match:
+            return self.get_s3_link_if_valid(context, Arn("s3", "", "", match.group(1)))
+        return None
+
+    def get_s3_link_if_valid(self, context: Context, arn: Arn) -> str | None:
+        try:
+            rest_parts = arn.resource.split("/")
+            # no path
+            if len(rest_parts) == 0:
+                return None
+            # only bucket
+            if len(rest_parts) == 1:
+                context.session.client("s3").head_bucket(Bucket=rest_parts[0])
+            # bucket and object
+            if len(rest_parts) > 1:
+                context.session.client("s3").head_object(
+                    Bucket=rest_parts[0], Key="/".join(rest_parts[1:])
+                )
+            return f"console.aws.amazon.com/go/view?arn={arn.encode()}"
+        except Exception:
+            return None

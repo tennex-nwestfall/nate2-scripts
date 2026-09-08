@@ -1,5 +1,6 @@
 """PTY wrapper for cdk that plays a sound when (y/n) prompts appear."""
 
+import argparse
 import fcntl
 import os
 import select
@@ -10,7 +11,6 @@ import sys
 import termios
 import threading
 import tty
-import argparse
 
 # _PATTERN = b"(y/n)"
 # _WINDOW = len(_PATTERN) * 2
@@ -73,7 +73,9 @@ def run(args: argparse.Namespace) -> None:
                     return
 
     if args.sound_while:
-        _sound_while_thread = threading.Thread(target=_play_sound_while_loop, daemon=True)
+        _sound_while_thread = threading.Thread(
+            target=_play_sound_while_loop, daemon=True
+        )
         _sound_while_thread.start()
 
     # Propagate terminal resizes to the child (also sends SIGWINCH to it).

@@ -1,8 +1,8 @@
-from pathlib import Path
-import os
 import json
+import os
 import time
 from datetime import datetime, timezone
+from pathlib import Path
 
 
 class SessionCache:
@@ -71,8 +71,7 @@ class SessionCache:
             except ValueError:
                 return None
 
-        # AWS federated console sessions expire after 12 hours; evict after 11 to be safe
-        if time.time() - entry["federated_at"] > 11 * 3600:
+        if time.time() - entry["federated_at"] > 3600 - 60:  # expire after 59 minutes
             return None
 
         return entry.get("hash")

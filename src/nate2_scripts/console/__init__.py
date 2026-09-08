@@ -1,5 +1,6 @@
 # PYTHON_ARGCOMPLETE_OK
 
+import argparse
 import json
 import os
 import re
@@ -8,7 +9,6 @@ import sys
 import time
 import urllib.parse
 import webbrowser
-import argparse
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -16,9 +16,9 @@ import argcomplete
 import boto3
 
 from nate2_scripts.console.destitationResolver import DestinationResolver
-
 from nate2_scripts.console.hashGrabber import HashGrabber
 from nate2_scripts.console.regionCache import RegionCache
+from nate2_scripts.console.resolvers import Context
 from nate2_scripts.console.sessionCache import SessionCache
 
 sts = boto3.client("sts")
@@ -40,11 +40,12 @@ def get_credentials(account_id: str) -> dict:
     identity = sts.get_caller_identity()
     arn = identity.get("Arn", "")
     email = get_email()
-    if f"assumed-role/" in arn and arn.endswith(f"/{email}"):
+    if "assumed-role/" in arn and arn.endswith(f"/{email}"):
         result = subprocess.run(
             ["aws", "configure", "export-credentials"],
             capture_output=True,
             text=True,
+            check=True,
         )
         if result.returncode == 0:
             return json.loads(result.stdout)
@@ -53,7 +54,9 @@ def get_credentials(account_id: str) -> dict:
     session = boto3.Session(profile_name=profile)
     config = session._session.get_scoped_config()
 
-    role_arn = config.get("role_arn", f"arn:aws:iam::{account_id}:role/OrganizationAccountAccessRole")
+    role_arn = config.get(
+        "role_arn", f"arn:aws:iam::{account_id}:role/OrganizationAccountAccessRole"
+    )
     source_profile = config.get("source_profile")
 
     if source_profile:
@@ -129,6 +132,13 @@ def parse_args(region_cache: RegionCache) -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "search",
+        type=str,
+        default="",
+        nargs="?",
+        help="Optional search/filter term applied to service or name resolution.",
+    )
+    parser.add_argument(
         "-r",
         "--region",
         type=str,
@@ -182,9 +192,23 @@ def main() -> None:
             f"{profile_name} cache is multi session with domain: {multisession_domain_name}"
         )
 
-    resolver = DestinationResolver(account_id, region_cache, multisession_domain_name)
+    session = boto3.Session(
+        aws_access_key_id=creds["AccessKeyId"],
+        aws_secret_access_key=creds["SecretAccessKey"],
+        aws_session_token=creds["SessionToken"],
+    )
+    context = Context()
+    context.session = session
+    context.default_region = (
+        args.region if args.region else region_cache.get_default_region()
+    )
+    context.regions = region_cache.get_regions()
+    context.current_account = account_id
+    context.profile = profile_name
 
-    destination = resolver.parse_destination(args.service, args.region)
+    resolver = DestinationResolver(context, multisession_domain_name)
+
+    destination = resolver.parse_destination(args.service, args.region, args.search)
 
     print("parsed destination:", destination)
 
