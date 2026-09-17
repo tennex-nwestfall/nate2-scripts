@@ -1,7 +1,7 @@
 import json
 import os
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 
@@ -65,8 +65,8 @@ class SessionCache:
                 if isinstance(expiration, datetime):
                     exp_time = expiration
                 else:
-                    exp_time = datetime.fromisoformat(expiration.replace("Z", "+00:00"))
-                if datetime.now(timezone.utc) >= exp_time:
+                    exp_time = datetime.fromisoformat(expiration)
+                if datetime.now(UTC) >= exp_time:
                     return None
             except ValueError:
                 return None

@@ -22,5 +22,18 @@ packages = ["src/nate2_scripts"]
 [tool.hatch.build.targets.wheel.force-include]
 "src/nate2_scripts/bing_wrapper/autocomplete.sh" = "nate2_scripts/bing_wrapper/autocomplete.sh"
 
+[project.optional-dependencies]
+dev = [
+    "boto3-stubs[essential]",
+    "moto[all]",
+    "pytest",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Resolver test modules are named after the service they cover (s3.py, logs.py,
+# ...) rather than test_*.py, so widen collection to any module under tests/.
+python_files = ["*.py"]
+
 [project.urls]
 Homepage = "https://github.com/tennex-nwestfall/nate2-scripts"

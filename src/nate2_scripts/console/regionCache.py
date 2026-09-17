@@ -31,15 +31,15 @@ class RegionCache:
                 file = json.loads(self.PATH.read_text())
                 if file.get("regions"):
                     self.regions = file["regions"]
-                if file.get("default"):
-                    self.default = file["default"]
                 return
             except (json.JSONDecodeError, OSError):
                 pass
 
         # File is missing or corrupt — write defaults so subsequent reads succeed
         self.PATH.parent.mkdir(parents=True, exist_ok=True)
-        self.PATH.write_text(json.dumps({"regions": DEFAULT_REGIONS, "default": DEFAULT_REGION}))
+        self.PATH.write_text(
+            json.dumps({"regions": DEFAULT_REGIONS, "default": DEFAULT_REGION})
+        )
 
     def get_regions(self) -> list[str]:
         """Return the list of configured AWS regions."""

@@ -11,33 +11,32 @@ import urllib.parse
 import webbrowser
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, TypedDict
 
 import argcomplete
 import boto3
+from argcomplete.completers import ChoicesCompleter
 
-from nate2_scripts.console.destitationResolver import DestinationResolver
 from nate2_scripts.console.hashGrabber import HashGrabber
 from nate2_scripts.console.regionCache import RegionCache
 from nate2_scripts.console.resolvers import Context
 from nate2_scripts.console.sessionCache import SessionCache
+from nate2_scripts.console.textResolver import TextResolver
+from nate2_scripts.console.types import CallerIdentity
 
-sts = boto3.client("sts")
+DEFAULT_REGIONS = ["us-east-1", "us-east-2", "us-west-1", "us-west-2"]
 
 
 def get_email() -> str:
     result = subprocess.run(
-        ["git", "config", "user.email"], capture_output=True, text=True
+        ["git", "config", "user.email"], capture_output=True, text=True, check=True
     )
     return result.stdout.strip()
 
 
-def get_account_id() -> str:
-    return sts.get_caller_identity()["Account"]
-
-
 def get_credentials(account_id: str) -> dict:
     # Check if already in an assumed role with the correct session name
-    identity = sts.get_caller_identity()
+    identity = boto3.client("sts").get_caller_identity()
     arn = identity.get("Arn", "")
     email = get_email()
     if "assumed-role/" in arn and arn.endswith(f"/{email}"):
@@ -102,7 +101,7 @@ def build_console_url(destination: str, signin_token: str) -> str:
     return f"https://signin.aws.amazon.com/federation?Action=login&Issuer=&Destination={dest}&SigninToken={signin_token}"
 
 
-def get_profile() -> str:
+def ensure_profile():
     profile_name = os.environ.get("AWS_PROFILE", "")
     if not profile_name:
         print(
@@ -110,27 +109,20 @@ def get_profile() -> str:
             file=sys.stderr,
         )
         sys.exit(1)
-    return profile_name
 
 
-def parse_args(region_cache: RegionCache) -> argparse.Namespace:
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Open AWS console for a specific service."
     )
-    svc_arg = parser.add_argument(
+    svc_arg: Any = parser.add_argument(
         "service",
         type=str,
         default="",
         nargs="?",
         help="The AWS service to open in the console, or an AWS ARN.",
     )
-    setattr(
-        svc_arg,
-        "completer",
-        argcomplete.completers.ChoicesCompleter(
-            list(DestinationResolver.get_service_list())
-        ),
-    )
+    svc_arg.completer = ChoicesCompleter(TextResolver.get_service_list())
     parser.add_argument(
         "search",
         type=str,
@@ -138,14 +130,15 @@ def parse_args(region_cache: RegionCache) -> argparse.Namespace:
         nargs="?",
         help="Optional search/filter term applied to service or name resolution.",
     )
-    parser.add_argument(
+    regions_arg: Any = parser.add_argument(
         "-r",
         "--region",
         type=str,
         default="",
-        choices=region_cache.get_regions(),
         help="The AWS region to use.",
     )
+    regions_arg.completer = argcomplete.completers.ChoicesCompleter(DEFAULT_REGIONS)
+
     parser.add_argument(
         "-f",
         "--force",
@@ -158,74 +151,100 @@ def parse_args(region_cache: RegionCache) -> argparse.Namespace:
     return args
 
 
-def main() -> None:
-    region_cache = RegionCache()
-    args = parse_args(region_cache)
+def get_suffix(
+    service: str,
+    search: str,
+    region: str,
+    session: boto3.Session,
+    regions: list[str] = DEFAULT_REGIONS,
+) -> tuple[str | None, Context]:
+    # set up context
+    context = Context()
+    if region != session.region_name:
+        context.session = boto3.Session(region_name=region)
+    else:
+        context.session = session
+    context.regions = regions
+    context.current_region = context.session.region_name
 
-    profile_name = get_profile()
+    # get account data
+    context.identity = context.session.client("sts").get_caller_identity()
+
+    resolver = TextResolver(context)
+
+    suffix = resolver.get_destination_suffix(service, search)
+    return (suffix, context)
+
+
+# profile_name = session.profile_name
+# hash = session_cache.get_session_hash(profile_name, creds)
+
+# multisession_domain_name = ""
+# signin_token = None
+# if hash is None:
+#     print(f"{profile_name} has no cached session. Grabbing signin token.")
+#     signin_token = get_signin_token(creds)
+# elif len(hash) == 0:
+#     print(f"{profile_name} cache is single session")
+# else:
+#     multisession_domain_name = f"{identity['Account']}-{hash}."
+#     print(
+#         f"{profile_name} cache is multi session with domain: {multisession_domain_name}"
+#     )
+
+# creds = get_credentials(identity["Account"])
+# session = boto3.Session()
+
+# context.session = session
+# context.default_region = (
+#     args.region if args.region else region_cache.get_default_region()
+# )
+# context.regions = region_cache.get_regions()
+# context.current_account = identity["Account"]
+# context.profile = profile_name
+
+# resolver = TextResolver(context, multisession_domain_name)
+
+# destination = resolver.parse_destination(args.service, args.region, args.search)
+
+# print("parsed destination:", destination)
+
+# if signin_token is not None:
+#     print("Building signin url")
+#     console_url = build_console_url(destination, signin_token)
+#     webbrowser.open(console_url)
+#     start_time = time.time()
+#     print(
+#         "Waiting for up to 10 seconds to allow the browser to open before exiting..."
+#     )
+#     hash = HashGrabber.get_hash(identity["Account"], start_time)
+#     print(f"Hash found: {hash}")
+#     session_cache.record_valid_hash(profile_name, hash)
+# else:
+#     print("Opening url")
+#     webbrowser.open(destination)
+
+
+def main() -> None:
+    ensure_profile()
+    args = parse_args()
+
+    session = boto3.Session()
     session_cache = SessionCache()
 
-    print("Loading regions from cache:", region_cache.get_regions())
-    print("Loading default region from cache:", region_cache.get_default_region())
+    # add region if it is not already in the default searchable regions list
+    regions = DEFAULT_REGIONS.copy()
+    if args.region and args.region not in regions:
+        regions.append(args.region)
 
     if args.force:
         print("Force passed. Reseting session cache.")
         session_cache.reset()
 
-    if args.region:
-        print("Default region is now:", args.region)
+    region = args.region or session.region_name
+    print("Default region is: ", region)
 
-    account_id = get_account_id()
-    creds = get_credentials(account_id)
-    hash = session_cache.get_session_hash(profile_name, creds)
-
-    multisession_domain_name = ""
-    signin_token = None
-    if hash is None:
-        print(f"{profile_name} has no cached session. Grabbing signin token.")
-        signin_token = get_signin_token(creds)
-    elif len(hash) == 0:
-        print(f"{profile_name} cache is single session")
-    else:
-        multisession_domain_name = f"{account_id}-{hash}."
-        print(
-            f"{profile_name} cache is multi session with domain: {multisession_domain_name}"
-        )
-
-    session = boto3.Session(
-        aws_access_key_id=creds["AccessKeyId"],
-        aws_secret_access_key=creds["SecretAccessKey"],
-        aws_session_token=creds["SessionToken"],
-    )
-    context = Context()
-    context.session = session
-    context.default_region = (
-        args.region if args.region else region_cache.get_default_region()
-    )
-    context.regions = region_cache.get_regions()
-    context.current_account = account_id
-    context.profile = profile_name
-
-    resolver = DestinationResolver(context, multisession_domain_name)
-
-    destination = resolver.parse_destination(args.service, args.region, args.search)
-
-    print("parsed destination:", destination)
-
-    if signin_token is not None:
-        print("Building signin url")
-        console_url = build_console_url(destination, signin_token)
-        webbrowser.open(console_url)
-        start_time = time.time()
-        print(
-            "Waiting for up to 10 seconds to allow the browser to open before exiting..."
-        )
-        hash = HashGrabber.get_hash(account_id, start_time)
-        print(f"Hash found: {hash}")
-        session_cache.record_valid_hash(profile_name, hash)
-    else:
-        print("Opening url")
-        webbrowser.open(destination)
+    suffix, context = get_suffix(args.service, args.search, region, session, regions)
 
 
 if __name__ == "__main__":

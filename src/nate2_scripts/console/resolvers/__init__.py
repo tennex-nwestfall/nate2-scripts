@@ -3,6 +3,8 @@ from urllib.parse import quote
 
 import boto3
 
+from nate2_scripts.console.types import Context
+
 
 class Arn:
     region: str
@@ -32,14 +34,6 @@ class Arn:
         return quote(
             f"arn:aws:{self.service}:{self.region}:{self.account}:{self.resource}"
         )
-
-
-class Context:
-    session: boto3.Session
-    default_region: str
-    regions: list[str]
-    current_account: str
-    profile: str
 
 
 def split(arn: str | None, num: int, chr=":") -> list[str | None]:

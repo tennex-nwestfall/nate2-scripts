@@ -14,22 +14,26 @@ SUPPORTED_BROWSERS = {
 
 WAIT_SECONDS = 10  # Time to wait for the browser to open and record the hash
 
-ONLY_HASH_SECONDS = 5 # Time to wait for the browser to open and record the hash, but only return the hash if found
+ONLY_HASH_SECONDS = 5  # Time to wait for the browser to open and record the hash, but only return the hash if found
 
 
 class HashGrabber:
-
     @staticmethod
     def _get_default_browser() -> str:
         """Return 'chrome' or 'firefox'. Prints to stderr and exits for unsupported browsers."""
         result = subprocess.run(
             [
-                "defaults", "read",
-                str(Path.home() / "Library/Preferences/com.apple.LaunchServices/com.apple.launchservices.secure"),
+                "defaults",
+                "read",
+                str(
+                    Path.home()
+                    / "Library/Preferences/com.apple.LaunchServices/com.apple.launchservices.secure"
+                ),
                 "LSHandlers",
             ],
             capture_output=True,
             text=True,
+            check=True,
         )
         # Find the block containing LSHandlerURLScheme = https and extract LSHandlerRoleAll
         match = re.search(
@@ -83,7 +87,10 @@ class HashGrabber:
                     match = pattern_with_hash.search(url)
                     if match:
                         return match.group(1)
-                    elif time.time() >= hash_only_deadline and pattern_without_hash.search(url):
+                    elif (
+                        time.time() >= hash_only_deadline
+                        and pattern_without_hash.search(url)
+                    ):
                         return ""
             except (OSError, sqlite3.Error):
                 pass
@@ -95,7 +102,9 @@ class HashGrabber:
         )
 
     @staticmethod
-    def _chrome_history(account_id: str, time_started: float) -> list[tuple[str, float]]:
+    def _chrome_history(
+        account_id: str, time_started: float
+    ) -> list[tuple[str, float]]:
         db_path = HashGrabber._chrome_sqlite_path()
         if not db_path.exists():
             return []
@@ -124,7 +133,9 @@ class HashGrabber:
                 conn.close()
 
     @staticmethod
-    def _firefox_history(account_id: str, time_started: float) -> list[tuple[str, float]]:
+    def _firefox_history(
+        account_id: str, time_started: float
+    ) -> list[tuple[str, float]]:
         db_path = HashGrabber._firefox_sqlite_path()
         if not db_path or not db_path.exists():
             return []

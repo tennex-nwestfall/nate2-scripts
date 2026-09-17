@@ -36,6 +36,7 @@ from nate2_scripts.console.resolvers.storagegateway import StorageGatewayResolve
 from nate2_scripts.console.resolvers.support import SupportResolver
 from nate2_scripts.console.resolvers.tennex import TennexResolver
 from nate2_scripts.console.resolvers.vpc import VpcResolver
+from nate2_scripts.console.types import Context
 
 MAX_THREADS = 10
 
@@ -78,106 +79,57 @@ RESOLVERS: list[Resolver] = [
     TennexResolver(),
 ]
 
-# keywords accepted by try_resolve_service across all resolvers, for argcomplete
-SERVICE_KEYWORDS = [
-    "ec2",
-    "sg",
-    "ami",
-    "elb",
-    "vpc",
-    "subnet",
-    "acl",
-    "iam",
-    "lambda",
-    "logs",
-    "cw",
-    "cloudwatch",
-    "cloudformation",
-    "cf",
-    "rds",
-    "secretsmanager",
-    "secretmanager",
-    "sm",
-    "ecs",
-    "eks",
-    "sns",
-    "sqs",
-    "batch",
-    "dynamo",
-    "step",
-    "s3",
-    "cost",
-    "support",
-    "athena",
-    "ecr",
-    "bedrock",
-    "br",
-    "config",
-    "controltower",
-    "cognito",
-    "cloudfront",
-    "front",
-    "route53",
-    "53",
-    "kms",
-    "storagegateway",
-    "sgw",
-    "fsx",
-    "ssm",
-    "parameter",
-    "ps",
-    "cloudtrail",
-    "ct",
-    "tennex",
-]
 
-
-class DestinationResolver:
+class TextResolver:
     context: Context
-    mdn: str
 
-    def __init__(self, context: Context, multisession_domain_name: str):
+    def __init__(self, context: Context):
         self.context = context
-        self.mdn = multisession_domain_name
 
     @staticmethod
     def get_service_list() -> list[str]:
-        return list(SERVICE_KEYWORDS)
+        return [name for resolver in RESOLVERS for name in resolver.get_service_names()]
 
-    def parse_destination(self, service: str, region: str, search: str = "") -> str:
-        if region:
-            self.context.default_region = region
-
+    def get_destination_suffix(self, service: str, search: str = "") -> str | None:
         if not service:
-            return f"https://{self.mdn}{self.context.default_region}.console.aws.amazon.com/"
+            return "console.aws.amazon.com"
 
         arn = Arn.try_parse(service)
         if arn is not None:
-            for resolver in RESOLVERS:
-                result = resolver.try_resolve_arn(self.context, arn)
-                if result is not None:
-                    return f"https://{self.mdn}{result}"
-            print(f"Error: Unable to resolve ARN '{service}'.", file=sys.stderr)
-            sys.exit(1)
+            return self.__resolve_arn(arn)
+        else:
+            return self.__resolve_not_arn(service, search)
 
+    def __resolve_arn(self, arn: Arn) -> str | None:
+        for resolver in RESOLVERS:
+            result = resolver.try_resolve_arn(self.context, arn)
+            if result is not None:
+                return result
+
+        print(f"Error: Unable to resolve ARN '{arn.encode()}'.", file=sys.stderr)
+        return None
+
+    def __resolve_not_arn(self, service: str, search: str = "") -> str | None:
         for resolver in RESOLVERS:
             result = resolver.try_resolve_service(self.context, service.lower(), search)
             if result is not None:
-                return f"https://{self.mdn}{result}"
+                return result
 
         for resolver in RESOLVERS:
             result = resolver.try_resolve_id(self.context, service)
             if result is not None:
-                return f"https://{self.mdn}{result}"
+                return result
 
-        name_result = self._resolve_name(service, search)
+        name_result = self.__resolve_name(service, search)
         if name_result is not None:
-            return f"https://{self.mdn}{name_result}"
+            return name_result
+        print(
+            f"Error: Unable to resolve service '{service}' with search '{search}'.",
+            file=sys.stderr,
+        )
+        return None
 
-        print(f"Error: Unknown service '{service}'.", file=sys.stderr)
-        sys.exit(1)
-
-    def _resolve_name(self, name: str, search: str) -> str | None:
+    def __resolve_name(self, name: str, search: str) -> str | None:
         results: dict[int, str] = {}
         with ThreadPoolExecutor(max_workers=MAX_THREADS) as executor:
             future_to_priority = {
