@@ -66,3 +66,6 @@ class Resolver(ABC):
     @abstractmethod
     def try_resolve_id(self, context: Context, id: str) -> str | None:
         pass
+
+    def get_arn_link(self, arn: Arn) -> str:
+        return f"console.aws.amazon.com/go/view?arn={arn.encode()}"

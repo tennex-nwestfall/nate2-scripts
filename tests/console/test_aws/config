@@ -1,0 +1,35 @@
+[profile tennex-auth-tennex-support-fake-company-A]
+region = us-east-1
+
+[profile tennex-auth-tennex-support-fake-company-B]
+region = us-east-1
+
+[profile fake-A-org]
+region = us-east-1
+role_arn = arn:aws:iam::111111111111:role/tennex-support-fake-company-A
+source_profile = tennex-auth-tennex-support-fake-company-A
+
+[profile fake-A-main]
+region = us-east-1
+role_arn = arn:aws:iam::222222222222:role/tennex-support-fake-company-A
+source_profile = tennex-auth-tennex-support-fake-company-A
+
+[profile fake-A-west]
+region = us-west-2
+role_arn = arn:aws:iam::333333333333:role/tennex-support-fake-company-A
+source_profile = tennex-auth-tennex-support-fake-company-A
+
+[profile fake-B-org]
+region = us-west-2
+role_arn = arn:aws:iam::444444444444:role/tennex-support-fake-company-B
+source_profile = tennex-auth-tennex-support-fake-company-B
+
+[profile fake-B-main]
+region = us-west-2
+role_arn = arn:aws:iam::555555555555:role/tennex-support-fake-company-B
+source_profile = tennex-auth-tennex-support-fake-company-B
+
+[profile fake-B-east]
+region = us-east-1
+role_arn = arn:aws:iam::666666666666:role/tennex-support-fake-company-B
+source_profile = tennex-auth-tennex-support-fake-company-B

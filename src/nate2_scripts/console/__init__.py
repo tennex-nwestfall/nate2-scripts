@@ -161,7 +161,9 @@ def get_suffix(
     # set up context
     context = Context()
     if region != session.region_name:
-        context.session = boto3.Session(region_name=region)
+        context.session = boto3.Session(
+            profile_name=session.profile_name, region_name=region
+        )
     else:
         context.session = session
     context.regions = regions

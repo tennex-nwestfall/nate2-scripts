@@ -13,7 +13,7 @@ class S3Resolver(Resolver):
         try:
             # check that bucket exists before sending link
             context.session.client("s3").head_bucket(Bucket=name)
-            return f"console.aws.amazon.com/s3/buckets/{name}"
+            return self.get_arn_link(Arn("s3", "", "", name))
         except Exception:
             return None
 
@@ -33,7 +33,7 @@ class S3Resolver(Resolver):
     ) -> str | None:
         if service not in self.get_service_names():
             return None
-        return "console.aws.amazon.com/s3/buckets"
+        return "console.aws.amazon.com/s3/home"
 
     def try_resolve_id(self, context: Context, id: str) -> str | None:
         match = re.match(r"^s3://(.+)", id)
@@ -52,9 +52,16 @@ class S3Resolver(Resolver):
                 context.session.client("s3").head_bucket(Bucket=rest_parts[0])
             # bucket and object
             if len(rest_parts) > 1:
-                context.session.client("s3").head_object(
-                    Bucket=rest_parts[0], Key="/".join(rest_parts[1:])
-                )
-            return f"console.aws.amazon.com/go/view?arn={arn.encode()}"
+                if rest_parts[-1] == "":
+                    response = context.session.client("s3").list_objects_v2(
+                        Bucket=rest_parts[0], Prefix="/".join(rest_parts[1:]), MaxKeys=1
+                    )
+                    if response["KeyCount"] == 0:
+                        return None
+                else:
+                    context.session.client("s3").head_object(
+                        Bucket=rest_parts[0], Key="/".join(rest_parts[1:])
+                    )
+            return self.get_arn_link(arn)
         except Exception:
             return None

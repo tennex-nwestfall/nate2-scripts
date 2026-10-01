@@ -3,13 +3,14 @@ import pytest
 
 from nate2_scripts.console import get_suffix
 from nate2_scripts.console.resolvers import Arn
-from tests.console.resolvers import make_session
+from tests.console.resolvers import make_link, make_session
 
 EAST_1_BUCKET = "exists-bucket"
 WEST_2_BUCKET = "exists-bucket-west"
 B_BUCKET = "exists-bucket-B"
 KEY = "this/file/exists.txt"
 KEY2 = "this/file_exists.txt"
+KEY3 = "a/file.txt"
 
 
 @pytest.fixture(autouse=True)
@@ -28,6 +29,7 @@ def s3_resources(aws_profiles):
         Bucket=WEST_2_BUCKET,
         CreateBucketConfiguration={"LocationConstraint": "us-west-2"},
     )
+    s3.put_object(Bucket=WEST_2_BUCKET, Key=KEY3, Body=b"wow3")
 
     session = boto3.Session(profile_name="fake-B-org", region_name="us-west-2")
     s3 = session.client("s3")
@@ -50,7 +52,7 @@ def test_s3_service():
     assert context.identity["Account"] == "111111111111"
 
 
-def test_s3_service_west_2():
+def test_s3_service_west():
     session = make_session("fake-A-org")
     suffix, context = get_suffix(
         "s3",
@@ -74,7 +76,7 @@ def test_s3_bucket_name():
     arn = Arn(
         "s3",
         "",
-        "111111111111",
+        "",
         EAST_1_BUCKET,
     )
     assert suffix == f"console.aws.amazon.com/go/view?arn={arn.encode()}"
@@ -84,7 +86,105 @@ def test_s3_bucket_name():
 
 def test_s3_bucket_name_missing():
     session = make_session("fake-A-org")
-    suffix, context = get_suffix(
+    suffix, _context = get_suffix(
+        "thisbucketdoesntexist",
+        "this parameter doesn't matter",
+        "us-west-2",
+        session,
+    )
+    assert suffix == None
+
+
+def test_s3_bucket_object_exists():
+    session = make_session("fake-A-org")
+    suffix, _context = get_suffix(
+        f"s3://{EAST_1_BUCKET}/{KEY}",
+        "this parameter doesn't matter",
+        "us-west-2",
+        session,
+    )
+    arn = Arn(
+        "s3",
+        "",
+        "",
+        f"{EAST_1_BUCKET}/{KEY}",
+    )
+    assert suffix == make_link(arn)
+    assert _context.current_region == "us-east-1"
+    assert _context.identity["Account"] == "111111111111"
+
+
+def test_s3_bucket_object_exists_west():
+    session = make_session("fake-A-org")
+    suffix, _context = get_suffix(
+        f"s3://{WEST_2_BUCKET}/{KEY3}",
+        "this parameter doesn't matter",
+        "us-west-2",
+        session,
+    )
+    arn = Arn(
+        "s3",
+        "",
+        "",
+        f"{WEST_2_BUCKET}/{KEY3}",
+    )
+    assert suffix == make_link(arn)
+    assert _context.current_region == "us-west-2"
+    assert _context.identity["Account"] == "111111111111"
+
+
+def test_s3_bucket_object_doesnt_exist():
+    session = make_session("fake-A-org")
+    suffix, _context = get_suffix(
+        f"s3://{EAST_1_BUCKET}/this/file",
+        "this parameter doesn't matter",
+        "us-west-2",
+        session,
+    )
+    assert suffix == None
+
+
+def test_s3_bucket_path_exists():
+    session = make_session("fake-A-org")
+    suffix, _context = get_suffix(
+        f"s3://{EAST_1_BUCKET}/this/file/",
+        "this parameter doesn't matter",
+        "us-west-2",
+        session,
+    )
+    arn = Arn(
+        "s3",
+        "",
+        "",
+        f"{EAST_1_BUCKET}/this/file/",
+    )
+    assert suffix == make_link(arn)
+    assert _context.current_region == "us-east-1"
+    assert _context.identity["Account"] == "111111111111"
+
+
+def test_s3_bucket_path_exists_west():
+    session = make_session("fake-A-org")
+    suffix, _context = get_suffix(
+        f"s3://{WEST_2_BUCKET}/a/",
+        "this parameter doesn't matter",
+        "us-east-1",
+        session,
+    )
+    arn = Arn(
+        "s3",
+        "",
+        "",
+        f"{WEST_2_BUCKET}/a/",
+    )
+    assert suffix == make_link(arn)
+    assert _context.current_region == "us-west-2"
+    assert _context.identity["Account"] == "111111111111"
+
+
+def test_s3_bucket_path_doesnt_exist():
+    session = make_session("fake-A-org")
+    suffix, _context = get_suffix(
         "thisbucketdoesntexist",
         "this parameter doesn't matter",
         "us-west-2",
