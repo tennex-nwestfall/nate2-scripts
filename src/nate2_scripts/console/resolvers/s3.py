@@ -44,14 +44,18 @@ class S3Resolver(Resolver):
     def get_s3_link_if_valid(self, context: Context, arn: Arn) -> str | None:
         try:
             rest_parts = arn.resource.split("/")
+            bucket_resp = context.session.client("s3").head_bucket(Bucket=rest_parts[0])
+            context.current_region = bucket_resp["ResponseMetadata"]["HTTPHeaders"][
+                "x-amz-bucket-region"
+            ]
             # no path
             if len(rest_parts) == 0:
                 return None
             # only bucket
-            if len(rest_parts) == 1:
-                context.session.client("s3").head_bucket(Bucket=rest_parts[0])
+            elif len(rest_parts) == 1:
+                return self.get_arn_link(arn)
             # bucket and object
-            if len(rest_parts) > 1:
+            elif len(rest_parts) > 1:
                 if rest_parts[-1] == "":
                     response = context.session.client("s3").list_objects_v2(
                         Bucket=rest_parts[0], Prefix="/".join(rest_parts[1:]), MaxKeys=1
@@ -62,6 +66,6 @@ class S3Resolver(Resolver):
                     context.session.client("s3").head_object(
                         Bucket=rest_parts[0], Key="/".join(rest_parts[1:])
                     )
-            return self.get_arn_link(arn)
+                return self.get_arn_link(arn)
         except Exception:
             return None

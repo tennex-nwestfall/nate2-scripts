@@ -77,7 +77,7 @@ class SessionCache:
         return entry.get("hash")
 
     def record_valid_hash(self, profile: str, hash: str) -> None:
-        """Store a newly obtained session hash and evict entries older than 12 hours.
+        """Store a newly obtained session hash and evict entries older than 59 minutes.
 
         Args:
             profile: The AWS profile name to associate with the hash.
@@ -90,7 +90,7 @@ class SessionCache:
         cache = {
             k: v
             for k, v in cache.items()
-            if time.time() - v.get("federated_at", 0) < 12 * 3600
+            if time.time() - v.get("federated_at", 0) < 3600 - 60
         }
         self._save_cache(cache)
 

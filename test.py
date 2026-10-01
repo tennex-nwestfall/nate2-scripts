@@ -1,3 +1,4 @@
+import argparse
 import json
 import os
 import re
@@ -6,13 +7,13 @@ import sys
 import time
 import urllib.parse
 import webbrowser
-import argparse
 from dataclasses import dataclass
 from pathlib import Path
 
 import argcomplete
 import boto3
 from botocore.exceptions import ClientError
+
 
 def get_credentials() -> dict:
     result = subprocess.run(
@@ -46,6 +47,7 @@ def get_signin_token(creds: dict) -> str:
     except json.JSONDecodeError:
         print("Error: Failed to parse JSON response. You may not have credentials.")
         sys.exit(1)
+
 
 creds = get_credentials()
 print(creds)

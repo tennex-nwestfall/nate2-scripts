@@ -9,7 +9,6 @@ import sys
 import time
 import urllib.parse
 import webbrowser
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, TypedDict
 
@@ -18,7 +17,6 @@ import boto3
 from argcomplete.completers import ChoicesCompleter
 
 from nate2_scripts.console.hashGrabber import HashGrabber
-from nate2_scripts.console.regionCache import RegionCache
 from nate2_scripts.console.resolvers import Context
 from nate2_scripts.console.sessionCache import SessionCache
 from nate2_scripts.console.textResolver import TextResolver
@@ -154,18 +152,12 @@ def parse_args() -> argparse.Namespace:
 def get_suffix(
     service: str,
     search: str,
-    region: str,
     session: boto3.Session,
     regions: list[str] = DEFAULT_REGIONS,
 ) -> tuple[str | None, Context]:
     # set up context
     context = Context()
-    if region != session.region_name:
-        context.session = boto3.Session(
-            profile_name=session.profile_name, region_name=region
-        )
-    else:
-        context.session = session
+    context.session = session
     context.regions = regions
     context.current_region = context.session.region_name
 
@@ -179,7 +171,6 @@ def get_suffix(
 
 
 # profile_name = session.profile_name
-# hash = session_cache.get_session_hash(profile_name, creds)
 
 # multisession_domain_name = ""
 # signin_token = None
@@ -211,6 +202,7 @@ def get_suffix(
 
 # print("parsed destination:", destination)
 
+
 # if signin_token is not None:
 #     print("Building signin url")
 #     console_url = build_console_url(destination, signin_token)
@@ -225,6 +217,35 @@ def get_suffix(
 # else:
 #     print("Opening url")
 #     webbrowser.open(destination)
+def get_multisession_domain_name(context: Context, session_cache: SessionCache) -> str:
+    multisession_domain_name = ""
+    signin_token = None
+    hash = session_cache.get_session_hash(context.session.profile_name, creds)
+    if hash is None:
+        print(
+            f"{context.session.profile_name} has no cached session. Grabbing signin token."
+        )
+        signin_token = get_signin_token(creds)
+    else:
+        multisession_domain_name = f"{context.identity['Account']}-{hash}."
+        print(
+            f"{context.session.profile_name} cache is multi session with domain: {multisession_domain_name}"
+        )
+
+
+def open_console(suffix: str, context: Context, session_cache: SessionCache):
+    print(f"Opening console with suffix: {suffix} and context: {context}")
+
+
+def update_role_names(session: boto3.Session):
+    """Set role_session_name to the user's email on every assume-role profile in the session's config.
+
+    Must be called before the session resolves credentials (i.e. before the first client is created).
+    """
+    email = get_email()
+    for profile in session._session.full_config.get("profiles", {}).values():
+        if "role_arn" in profile:
+            profile["role_session_name"] = email
 
 
 def main() -> None:
@@ -233,20 +254,26 @@ def main() -> None:
 
     session = boto3.Session()
     session_cache = SessionCache()
-
-    # add region if it is not already in the default searchable regions list
-    regions = DEFAULT_REGIONS.copy()
-    if args.region and args.region not in regions:
-        regions.append(args.region)
+    update_role_names(session)
 
     if args.force:
         print("Force passed. Reseting session cache.")
         session_cache.reset()
 
-    region = args.region or session.region_name
-    print("Default region is: ", region)
+    # add region if it is not already in the default searchable regions list
+    regions = DEFAULT_REGIONS.copy()
+    if args.region:
+        session._session.set_config_variable("region", args.region)
+        if args.region not in regions:
+            regions.append(args.region)
 
-    suffix, context = get_suffix(args.service, args.search, region, session, regions)
+    print("Default region is: ", session.region_name)
+
+    suffix, context = get_suffix(args.service, args.search, session, regions)
+    if suffix:
+        open_console(suffix, context, session_cache)
+    else:
+        print("Cannot open console page.")
 
 
 if __name__ == "__main__":

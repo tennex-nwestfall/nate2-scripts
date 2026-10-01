@@ -14,7 +14,7 @@ SUPPORTED_BROWSERS = {
 
 WAIT_SECONDS = 10  # Time to wait for the browser to open and record the hash
 
-ONLY_HASH_SECONDS = 5  # Time to wait for the browser to open and record the hash, but only return the hash if found
+ONLY_HASH_SECONDS = 100  # Time to wait for the browser to open and record the hash, but only return the hash if found
 
 
 class HashGrabber:
@@ -143,9 +143,15 @@ class HashGrabber:
         # Firefox stores time as microseconds since Unix epoch
         firefox_time_started = int(time_started * 1_000_000)
 
-        with tempfile.NamedTemporaryFile(suffix=".sqlite") as tmp:
-            shutil.copy2(db_path, tmp.name)
-            conn = sqlite3.connect(tmp.name)
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_db = Path(tmp_dir) / "places.sqlite"
+            shutil.copy2(db_path, tmp_db)
+            # Firefox uses WAL mode, so recent visits live in places.sqlite-wal until checkpointed.
+            # The -shm index is skipped; SQLite rebuilds it from the WAL on open.
+            wal_path = db_path.with_name(db_path.name + "-wal")
+            if wal_path.exists():
+                shutil.copy2(wal_path, tmp_db.with_name(tmp_db.name + "-wal"))
+            conn = sqlite3.connect(tmp_db)
             try:
                 cursor = conn.execute(
                     """
