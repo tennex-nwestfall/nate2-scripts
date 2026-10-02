@@ -1,7 +1,6 @@
 import json
 import os
 import time
-from datetime import UTC, datetime
 from pathlib import Path
 
 
@@ -36,17 +35,15 @@ class SessionCache:
         self.PATH.parent.mkdir(parents=True, exist_ok=True)
         self.PATH.write_text(json.dumps(cache))
 
-    def get_session_hash(self, profile: str, creds: dict) -> None | str:
+    def get_session_hash(self, profile: str) -> None | str:
         """Return the cached session hash for a profile if it is still valid.
 
         A cached entry is considered invalid (returns None) when:
         - No entry exists for the profile.
-        - The STS credential Expiration timestamp has already passed.
-        - The entry was federated more than 11 hours ago (AWS console session limit).
+        - The entry was federated more than 59 minutes ago (AWS console session limit).
 
         Args:
             profile: The AWS profile name used to look up the cache entry.
-            creds: STS credentials dict; may contain an "Expiration" ISO-8601 string.
 
         Returns:
             The cached session hash string, or None if the cache is missing/expired.
@@ -56,20 +53,6 @@ class SessionCache:
 
         if not entry:
             return None
-
-        # Honour the STS credential expiration if present
-        expiration = creds.get("Expiration")
-        print(expiration)
-        if expiration:
-            try:
-                if isinstance(expiration, datetime):
-                    exp_time = expiration
-                else:
-                    exp_time = datetime.fromisoformat(expiration)
-                if datetime.now(UTC) >= exp_time:
-                    return None
-            except ValueError:
-                return None
 
         if time.time() - entry["federated_at"] > 3600 - 60:  # expire after 59 minutes
             return None

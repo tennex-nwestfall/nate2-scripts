@@ -20,11 +20,13 @@ def aws_profiles(monkeypatch):
     """
     monkeypatch.setenv("AWS_CONFIG_FILE", str(AWS_CONFIG_FILE))
     monkeypatch.setenv("AWS_SHARED_CREDENTIALS_FILE", str(AWS_CREDENTIALS_FILE))
-    monkeypatch.setenv("AWS_DEFAULT_REGION", "us-east-1")
     # Env credentials would short-circuit the profile assume-role chain, so
     # make sure none leak in from the real environment.
     for var in (
+        "AWS_DEFAULT_PROFILE",
         "AWS_PROFILE",
+        "AWS_DEFAULT_REGION",
+        "AWS_REGION",
         "AWS_ACCESS_KEY_ID",
         "AWS_SECRET_ACCESS_KEY",
         "AWS_SESSION_TOKEN",

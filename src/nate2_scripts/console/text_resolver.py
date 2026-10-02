@@ -1,7 +1,10 @@
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from nate2_scripts.console.resolvers import Arn, Context, Resolver
+import boto3
+
+from nate2_scripts.console.boto3_session import find_and_update_profile
+from nate2_scripts.console.resolvers import Context, Resolver
 from nate2_scripts.console.resolvers.athena import AthenaResolver
 from nate2_scripts.console.resolvers.batch import BatchResolver
 from nate2_scripts.console.resolvers.bedrock import BedrockResolver
@@ -23,6 +26,7 @@ from nate2_scripts.console.resolvers.iam import IamResolver
 from nate2_scripts.console.resolvers.kms import KmsResolver
 from nate2_scripts.console.resolvers.lambda_ import LambdaResolver
 from nate2_scripts.console.resolvers.logs import LogsResolver
+from nate2_scripts.console.resolvers.marketplace import MarketplaceResolver
 from nate2_scripts.console.resolvers.parameter import ParameterResolver
 from nate2_scripts.console.resolvers.rds import RdsResolver
 from nate2_scripts.console.resolvers.route53 import Route53Resolver
@@ -34,49 +38,48 @@ from nate2_scripts.console.resolvers.ssm import SsmResolver
 from nate2_scripts.console.resolvers.stepfunctions import StepFunctionsResolver
 from nate2_scripts.console.resolvers.storagegateway import StorageGatewayResolver
 from nate2_scripts.console.resolvers.support import SupportResolver
-from nate2_scripts.console.resolvers.tennex import TennexResolver
 from nate2_scripts.console.resolvers.vpc import VpcResolver
-from nate2_scripts.console.types import Context
+from nate2_scripts.console.types import Arn, Context
 
 MAX_THREADS = 10
 
 RESOLVERS: list[Resolver] = [
-    # have name-resolution
+    # have name-resolution so it must be listed first / in this order
     LogsResolver(),
     S3Resolver(),
     Ec2Resolver(),
     CloudFormationResolver(),
     LambdaResolver(),
     # no name-resolution
-    VpcResolver(),
-    IamResolver(),
-    RdsResolver(),
-    SecretsManagerResolver(),
-    EcsResolver(),
-    EksResolver(),
-    SnsResolver(),
-    SqsResolver(),
-    BatchResolver(),
-    DynamoDbResolver(),
-    StepFunctionsResolver(),
-    ElbResolver(),
-    CostResolver(),
-    SupportResolver(),
-    AthenaResolver(),
-    EcrResolver(),
-    BedrockResolver(),
-    ConfigResolver(),
-    ControlTowerResolver(),
-    CognitoResolver(),
-    CloudFrontResolver(),
-    Route53Resolver(),
-    KmsResolver(),
-    StorageGatewayResolver(),
-    FsxResolver(),
-    SsmResolver(),
-    ParameterResolver(),
-    CloudTrailResolver(),
-    TennexResolver(),
+    # VpcResolver(),
+    # IamResolver(),
+    # RdsResolver(),
+    # SecretsManagerResolver(),
+    # EcsResolver(),
+    # EksResolver(),
+    # SnsResolver(),
+    # SqsResolver(),
+    # BatchResolver(),
+    # DynamoDbResolver(),
+    # StepFunctionsResolver(),
+    # ElbResolver(),
+    # CostResolver(),
+    # SupportResolver(),
+    # AthenaResolver(),
+    # EcrResolver(),
+    # BedrockResolver(),
+    # ConfigResolver(),
+    # ControlTowerResolver(),
+    # CognitoResolver(),
+    # CloudFrontResolver(),
+    # Route53Resolver(),
+    # KmsResolver(),
+    # StorageGatewayResolver(),
+    # FsxResolver(),
+    # SsmResolver(),
+    # ParameterResolver(),
+    # CloudTrailResolver(),
+    MarketplaceResolver(),
 ]
 
 
@@ -100,13 +103,31 @@ class TextResolver:
         else:
             return self.__resolve_not_arn(service, search)
 
-    def __resolve_arn(self, arn: Arn) -> str | None:
+    def __resolve_arn2(self, arn: Arn) -> str | None:
+        if arn.account and arn.account != self.context.account:  # noqa: SIM102
+            new_session = find_and_update_profile(self.context.session, arn.account)
+            if new_session:
+                self.context.session = new_session
+                self.context.identity = self.context.session.client(
+                    "sts"
+                ).get_caller_identity()
+            else:
+                return None
+
+        if arn.region:
+            self.context.set_region(arn.region)
+
         for resolver in RESOLVERS:
             result = resolver.try_resolve_arn(self.context, arn)
             if result is not None:
                 return result
 
-        print(f"Error: Unable to resolve ARN '{arn.encode()}'.", file=sys.stderr)
+    def __resolve_arn(self, arn: Arn) -> str | None:
+        result = self.__resolve_arn2(arn)
+        if result is not None:
+            return result
+
+        print(f"Error: Unable to resolve ARN '{arn.str()}'.", file=sys.stderr)
         return None
 
     def __resolve_not_arn(self, service: str, search: str = "") -> str | None:

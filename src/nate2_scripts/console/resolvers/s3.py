@@ -1,6 +1,7 @@
 import re
 
-from nate2_scripts.console.resolvers import Arn, Context, Resolver
+from nate2_scripts.console.resolvers import Context, Resolver
+from nate2_scripts.console.types import Arn
 
 
 class S3Resolver(Resolver):
@@ -10,12 +11,8 @@ class S3Resolver(Resolver):
     def try_resolve_name(self, context: Context, name: str, search: str) -> str | None:
         # search query for the S3 is not in the url
         # so search is unused
-        try:
-            # check that bucket exists before sending link
-            context.session.client("s3").head_bucket(Bucket=name)
-            return self.get_arn_link(Arn("s3", "", "", name))
-        except Exception:
-            return None
+        arn = Arn("s3", "", "", name)
+        return self.get_s3_link_if_valid(context, arn)
 
     def try_resolve_arn(
         self,
@@ -45,9 +42,9 @@ class S3Resolver(Resolver):
         try:
             rest_parts = arn.resource.split("/")
             bucket_resp = context.session.client("s3").head_bucket(Bucket=rest_parts[0])
-            context.current_region = bucket_resp["ResponseMetadata"]["HTTPHeaders"][
-                "x-amz-bucket-region"
-            ]
+            context.set_region(
+                bucket_resp["ResponseMetadata"]["HTTPHeaders"]["x-amz-bucket-region"]
+            )
             # no path
             if len(rest_parts) == 0:
                 return None
@@ -67,5 +64,5 @@ class S3Resolver(Resolver):
                         Bucket=rest_parts[0], Key="/".join(rest_parts[1:])
                     )
                 return self.get_arn_link(arn)
-        except Exception:
+        except Exception:  # noqa: BLE001
             return None

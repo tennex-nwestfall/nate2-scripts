@@ -1,6 +1,12 @@
 import urllib.parse
+from asyncio import streams
 
-from nate2_scripts.console.resolvers import Arn, Context, Resolver, split
+from nate2_scripts.console.resolvers import Context, Resolver, split
+from nate2_scripts.console.types import Arn
+
+
+def cw_encode(value: str) -> str:
+    return urllib.parse.quote(value, safe="").replace("%", "$25")
 
 
 class LogsResolver(Resolver):
@@ -11,13 +17,13 @@ class LogsResolver(Resolver):
         for region in context.regions:
             try:
                 client = context.session.client("logs", region_name=region)
-                result = client.describe_log_groups(logGroupNamePrefix=name)
-                if any(
-                    lg["logGroupName"] == name for lg in result.get("logGroups", [])
-                ):
-                    encoded = urllib.parse.quote(name, safe="")
-                    return f"{region}.console.aws.amazon.com/cloudwatch/home?region={region}#logsV2:log-groups/log-group/{encoded}"
-            except Exception:
+                result = client.describe_log_groups(logGroupNamePrefix=name, limit=1)
+                groups = result.get("logGroups", [])
+                if groups and groups[0]["logGroupName"] == name:
+                    context.set_region(region)
+                    arn = Arn("logs", region, context.account, "log-group", name, "*")
+                    return self.get_arn_link(arn)
+            except Exception:  # noqa: BLE001, S112
                 continue
         return None
 
@@ -25,24 +31,42 @@ class LogsResolver(Resolver):
         if arn.service != "logs":
             return None
 
-        resource_type, resource_id = split(arn.resource, 1, ":")
+        resource_type, group, stream_type, stream_name = split(arn.resource, 3, ":")
         if resource_type != "log-group":
             return None
-        region = arn.region
-        # log-group arns often carry a trailing ':*' wildcard
-        name = resource_id or ""
-        if name.endswith(":*"):
-            name = name[:-2]
+
+        name = group or ""
         try:
-            client = context.session.client("logs", region_name=region)
-            result = client.describe_log_groups(logGroupNamePrefix=name)
-            if not any(
-                lg["logGroupName"] == name for lg in result.get("logGroups", [])
-            ):
+            client = context.session.client("logs")
+            if stream_type == "*":
+                result = client.describe_log_groups(logGroupNamePrefix=name, limit=1)
+                groups = result.get("logGroups", [])
+                if not groups or groups[0]["logGroupName"] != name:
+                    return None
+                arn = Arn(
+                    "logs", context.region, context.account, "log-group", group, "*"
+                )
+            elif stream_type == "log-stream":
+                result = client.describe_log_streams(
+                    logGroupName=name, logStreamNamePrefix=stream_name, limit=1
+                )
+                streams = result.get("logStreams", [])
+                if not streams or streams[0]["logStreamName"] != stream_name:
+                    return None
+                arn = Arn(
+                    "logs",
+                    context.region,
+                    context.account,
+                    "log-group",
+                    group,
+                    stream_type,
+                    stream_name,
+                )
+            else:
                 return None
-            encoded = urllib.parse.quote(name, safe="")
-            return f"{region}.console.aws.amazon.com/cloudwatch/home?region={region}#logsV2:log-groups/log-group/{encoded}"
-        except Exception:
+
+            return self.get_arn_link(arn)
+        except Exception:  # noqa: BLE001
             return None
 
     def try_resolve_service(
@@ -50,8 +74,14 @@ class LogsResolver(Resolver):
     ) -> str | None:
         if service not in self.get_service_names():
             return None
-        region = context.default_region
-        return f"{region}.console.aws.amazon.com/cloudwatch/home#logsV2:log-groups"
+
+        if service == "logs":
+            if search:
+                return f"console.aws.amazon.com/cloudwatch/home#logsV2:log-groups$3FlogGroupNameFilter$3D{urllib.parse.quote_plus(search).replace('%', '$25')}"
+            else:
+                return "console.aws.amazon.com/cloudwatch/home#logsV2:log-groups"
+        else:
+            return "console.aws.amazon.com/cloudwatch/home"
 
     def try_resolve_id(self, context: Context, id: str) -> str | None:
         return None

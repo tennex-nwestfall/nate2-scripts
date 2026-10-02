@@ -1,39 +1,6 @@
 from abc import ABC, abstractmethod
-from urllib.parse import quote
 
-import boto3
-
-from nate2_scripts.console.types import Context
-
-
-class Arn:
-    region: str
-    service: str
-    resource: str
-    account: str
-
-    @staticmethod
-    def try_parse(arn: str) -> "Arn | None":
-        parts = arn.split(":")
-        if len(parts) < 6:
-            return None
-        if parts[0] != "arn":
-            return None
-        if parts[1] != "aws":
-            return None
-
-        return Arn(*parts[2:])
-
-    def __init__(self, service="", region="", account="", *resource):
-        self.service = service
-        self.region = region
-        self.account = account
-        self.resource = ":".join(resource)
-
-    def encode(self) -> str:
-        return quote(
-            f"arn:aws:{self.service}:{self.region}:{self.account}:{self.resource}"
-        )
+from nate2_scripts.console.types import Arn, Context
 
 
 def split(arn: str | None, num: int, chr=":") -> list[str | None]:

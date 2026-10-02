@@ -39,16 +39,21 @@ def s3_resources(aws_profiles):
     )
 
 
+# --------------------------------
+# Service
+# --------------------------------
+
+
 def test_s3_service():
     session = make_session("fake-A-org")
     suffix, context = get_suffix(
         "s3",
         "this parameter doesn't matter",
-        "us-east-1",
+        "",
         session,
     )
     assert suffix == "console.aws.amazon.com/s3/home"
-    assert context.current_region == "us-east-1"
+    assert context.session.region_name == "us-east-1"
     assert context.identity["Account"] == "111111111111"
 
 
@@ -61,8 +66,110 @@ def test_s3_service_west():
         session,
     )
     assert suffix == "console.aws.amazon.com/s3/home"
-    assert context.current_region == "us-west-2"
+    assert context.session.region_name == "us-west-2"
     assert context.identity["Account"] == "111111111111"
+
+
+# --------------------------------
+# ARN
+# --------------------------------
+
+
+def test_s3_arn():
+    session = make_session("fake-A-org")
+    arn = Arn("s3", "", "", EAST_1_BUCKET)
+    suffix, context = get_suffix(
+        arn.str(),
+        "this parameter doesn't matter",
+        "us-west-2",
+        session,
+    )
+    assert suffix == make_link(arn)
+    assert context.session.region_name == "us-east-1"
+    assert context.identity["Account"] == "111111111111"
+
+
+def test_s3_arn_west():
+    session = make_session("fake-A-org")
+    arn = Arn("s3", "", "", WEST_2_BUCKET)
+    suffix, context = get_suffix(
+        arn.str(),
+        "this parameter doesn't matter",
+        "us-east-1",
+        session,
+    )
+    assert suffix == make_link(arn)
+    assert context.session.region_name == "us-west-2"
+    assert context.identity["Account"] == "111111111111"
+
+
+def test_s3_arn_nonexistent():
+    session = make_session("fake-A-org")
+    arn = Arn("s3", "", "", "exist")
+    suffix, _context = get_suffix(
+        arn.str(),
+        "this parameter doesn't matter",
+        "us-east-1",
+        session,
+    )
+    assert suffix == None
+
+
+def test_s3_arn_file():
+    session = make_session("fake-A-org")
+    arn = Arn("s3", "", "", f"{EAST_1_BUCKET}/{KEY}")
+    suffix, context = get_suffix(
+        arn.str(),
+        "this parameter doesn't matter",
+        "",
+        session,
+    )
+    assert suffix == make_link(arn)
+    assert context.session.region_name == "us-east-1"
+    assert context.identity["Account"] == "111111111111"
+
+
+def test_s3_arn_file_nonexistent():
+    session = make_session("fake-A-org")
+    arn = Arn("s3", "", "", f"{EAST_1_BUCKET}/this")
+    suffix, _context = get_suffix(
+        arn.str(),
+        "this parameter doesn't matter",
+        "us-west-2",
+        session,
+    )
+    assert suffix == None
+
+
+def test_s3_arn_path():
+    session = make_session("fake-A-org")
+    arn = Arn("s3", "", "", f"{EAST_1_BUCKET}/this/")
+    suffix, context = get_suffix(
+        arn.str(),
+        "this parameter doesn't matter",
+        "us-west-1",
+        session,
+    )
+    assert suffix == make_link(arn)
+    assert context.session.region_name == "us-east-1"
+    assert context.identity["Account"] == "111111111111"
+
+
+def test_s3_arn_path_nonexistent():
+    session = make_session("fake-A-org")
+    arn = Arn("s3", "", "", f"{EAST_1_BUCKET}/no")
+    suffix, _context = get_suffix(
+        arn.str(),
+        "this parameter doesn't matter",
+        "us-east-1",
+        session,
+    )
+    assert suffix == None
+
+
+# --------------------------------
+# Name
+# --------------------------------
 
 
 def test_s3_bucket_name():
@@ -79,8 +186,8 @@ def test_s3_bucket_name():
         "",
         EAST_1_BUCKET,
     )
-    assert suffix == f"console.aws.amazon.com/go/view?arn={arn.encode()}"
-    assert context.current_region == "us-west-2"
+    assert suffix == make_link(arn)
+    assert context.session.region_name == "us-east-1"
     assert context.identity["Account"] == "111111111111"
 
 
@@ -93,6 +200,11 @@ def test_s3_bucket_name_missing():
         session,
     )
     assert suffix == None
+
+
+# --------------------------------
+# Id
+# --------------------------------
 
 
 def test_s3_bucket_object_exists():
@@ -110,7 +222,7 @@ def test_s3_bucket_object_exists():
         f"{EAST_1_BUCKET}/{KEY}",
     )
     assert suffix == make_link(arn)
-    assert _context.current_region == "us-east-1"
+    assert _context.session.region_name == "us-east-1"
     assert _context.identity["Account"] == "111111111111"
 
 
@@ -129,7 +241,7 @@ def test_s3_bucket_object_exists_west():
         f"{WEST_2_BUCKET}/{KEY3}",
     )
     assert suffix == make_link(arn)
-    assert _context.current_region == "us-west-2"
+    assert _context.session.region_name == "us-west-2"
     assert _context.identity["Account"] == "111111111111"
 
 
@@ -159,7 +271,7 @@ def test_s3_bucket_path_exists():
         f"{EAST_1_BUCKET}/this/file/",
     )
     assert suffix == make_link(arn)
-    assert _context.current_region == "us-east-1"
+    assert _context.session.region_name == "us-east-1"
     assert _context.identity["Account"] == "111111111111"
 
 
@@ -178,7 +290,7 @@ def test_s3_bucket_path_exists_west():
         f"{WEST_2_BUCKET}/a/",
     )
     assert suffix == make_link(arn)
-    assert _context.current_region == "us-west-2"
+    assert _context.session.region_name == "us-west-2"
     assert _context.identity["Account"] == "111111111111"
 
 
