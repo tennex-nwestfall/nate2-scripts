@@ -52,7 +52,7 @@ def test_s3_service():
         "",
         session,
     )
-    assert suffix == "console.aws.amazon.com/s3/home"
+    assert suffix == "/s3/home"
     assert context.session.region_name == "us-east-1"
     assert context.identity["Account"] == "111111111111"
 
@@ -65,7 +65,7 @@ def test_s3_service_west():
         "us-west-2",
         session,
     )
-    assert suffix == "console.aws.amazon.com/s3/home"
+    assert suffix == "/s3/home"
     assert context.session.region_name == "us-west-2"
     assert context.identity["Account"] == "111111111111"
 

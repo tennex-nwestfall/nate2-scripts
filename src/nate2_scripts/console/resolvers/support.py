@@ -5,7 +5,7 @@ class SupportResolver(Resolver):
     def get_service_names(self) -> list[str]:
         return ["support"]
 
-    def try_resolve_name(self, context: Context, name: str, search: str) -> str | None:
+    def try_resolve_name(self, context: Context, name: str) -> str | None:
         return None
 
     def try_resolve_arn(self, context: Context, arn: Arn) -> str | None:
@@ -16,7 +16,10 @@ class SupportResolver(Resolver):
     ) -> str | None:
         if service not in self.get_service_names():
             return None
-        return f"{context.default_region}.console.aws.amazon.com/support"
+        # link must have the region section set to "support"
+        # bad but better than changing the overall resolver logic
+        context.set_region("support")
+        return "/support/home"
 
     def try_resolve_id(self, context: Context, id: str) -> str | None:
         return None

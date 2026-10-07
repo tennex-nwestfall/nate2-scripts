@@ -1,9 +1,7 @@
-import pytest
-
 from nate2_scripts.console import get_suffix
 from tests.console.resolvers import make_session
 
-MARKETPLACE_CONSOLE_URL = "console.aws.amazon.com/marketplace/search"
+MARKETPLACE_CONSOLE_URL = "/marketplace/search"
 
 # --------------------------------
 # Service

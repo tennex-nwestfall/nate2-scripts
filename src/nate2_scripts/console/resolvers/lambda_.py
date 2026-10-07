@@ -1,3 +1,5 @@
+import urllib.parse
+
 from nate2_scripts.console.resolvers import Arn, Context, Resolver, split
 
 
@@ -5,7 +7,9 @@ class LambdaResolver(Resolver):
     def get_service_names(self) -> list[str]:
         return ["lambda"]
 
-    def try_resolve_name(self, context: Context, name: str, search: str) -> str | None:
+    def try_resolve_name(self, context: Context, name: str) -> str | None:
+        # TODO: implement name resolution for Lambda functions
+        return None
         for region in context.regions:
             try:
                 context.session.client("lambda", region_name=region).get_function(
@@ -17,6 +21,8 @@ class LambdaResolver(Resolver):
         return None
 
     def try_resolve_arn(self, context: Context, arn: Arn) -> str | None:
+        # TODO: implement ARN resolution for Lambda functions
+        return None
         if arn.service != "lambda":
             return None
 
@@ -37,8 +43,10 @@ class LambdaResolver(Resolver):
     ) -> str | None:
         if service not in self.get_service_names():
             return None
-        region = context.default_region
-        return f"{region}.console.aws.amazon.com/lambda/"
+        base = "/lambda/home"
+        if search:
+            return f"{base}#functions?o0=:&v0={urllib.parse.quote(search)}"
+        return base
 
     def try_resolve_id(self, context: Context, id: str) -> str | None:
         return None

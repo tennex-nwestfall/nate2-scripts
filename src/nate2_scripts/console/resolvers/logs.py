@@ -1,5 +1,4 @@
 import urllib.parse
-from asyncio import streams
 
 from nate2_scripts.console.resolvers import Context, Resolver, split
 from nate2_scripts.console.types import Arn
@@ -13,7 +12,7 @@ class LogsResolver(Resolver):
     def get_service_names(self) -> list[str]:
         return ["logs", "cw", "cloudwatch"]
 
-    def try_resolve_name(self, context: Context, name: str, search: str) -> str | None:
+    def try_resolve_name(self, context: Context, name: str) -> str | None:
         for region in context.regions:
             try:
                 client = context.session.client("logs", region_name=region)
@@ -75,13 +74,14 @@ class LogsResolver(Resolver):
         if service not in self.get_service_names():
             return None
 
+        base = "/cloudwatch/home"
         if service == "logs":
             if search:
-                return f"console.aws.amazon.com/cloudwatch/home#logsV2:log-groups$3FlogGroupNameFilter$3D{urllib.parse.quote_plus(search).replace('%', '$25')}"
+                return f"{base}#logsV2:log-groups$3FlogGroupNameFilter$3D{urllib.parse.quote_plus(search).replace('%', '$25')}"
             else:
-                return "console.aws.amazon.com/cloudwatch/home#logsV2:log-groups"
+                return f"{base}#logsV2:log-groups"
         else:
-            return "console.aws.amazon.com/cloudwatch/home"
+            return base
 
     def try_resolve_id(self, context: Context, id: str) -> str | None:
         return None

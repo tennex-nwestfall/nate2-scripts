@@ -133,41 +133,50 @@ def get_suffix(
 def build_signin_url(session: boto3.Session, suffix: str) -> str:
     region = session.region_name
     signin_token = get_signin_token(session)
-    dest = urllib.parse.quote(f"https://{region}.{suffix}", safe="")
+    dest = urllib.parse.quote(
+        f"https://{region}.console.aws.amazon.com{suffix}", safe=""
+    )
     return f"https://signin.aws.amazon.com/federation?Action=login&Issuer=&SigninToken={signin_token}&Destination={dest}"
 
 
 def build_regular_url(session: boto3.Session, suffix: str, mdn: str) -> str:
     region = session.region_name
-    return f"https://{mdn}.{region}.{suffix}"
+    return f"https://{mdn}.{region}.console.aws.amazon.com{suffix}"
+
+
+def open(url: str):
+    print(f"Opening console URL: {url}")
+    webbrowser.open(url)
 
 
 def open_console(suffix: str, context: Context, session_cache: SessionCache):
     print(f"Opening console with suffix: {suffix} and context: {context}")
-
-    hash = session_cache.get_session_hash(context.session.profile_name)
-    if hash is None:
-        print(
-            f"{context.session.profile_name} has no cached session. Grabbing signin token."
-        )
-        url = build_signin_url(context.session, suffix)
-        print(f"Opening console URL: {url}")
-        webbrowser.open(url)
-        hash = HashGrabber.get_hash(context.identity["Account"], time.time())
-        if hash is None:
-            print("Failed to grab hash.")
-            sys.exit(1)
-        print(f"Successfully grabbed hash for {context.session.profile_name}: {hash}")
-        session_cache.record_valid_hash(context.session.profile_name, hash)
-
+    if not context.useprefix:
+        open(f"https://{suffix}")
     else:
-        multisession_domain_name = f"{context.identity['Account']}-{hash}"
-        print(
-            f"{context.session.profile_name} cache has cached multi session with domain: {multisession_domain_name}"
-        )
-        url = build_regular_url(context.session, suffix, multisession_domain_name)
-        print(f"Opening console URL: {url}")
-        webbrowser.open(url)
+        hash = session_cache.get_session_hash(context.session.profile_name)
+        if hash is None:
+            print(
+                f"{context.session.profile_name} has no cached session. Grabbing signin token."
+            )
+            url = build_signin_url(context.session, suffix)
+            open(url)
+            hash = HashGrabber.get_hash(context.identity["Account"], time.time())
+            if hash is None:
+                print("Failed to grab hash.")
+                sys.exit(1)
+            print(
+                f"Successfully grabbed hash for {context.session.profile_name}: {hash}"
+            )
+            session_cache.record_valid_hash(context.session.profile_name, hash)
+
+        else:
+            multisession_domain_name = f"{context.identity['Account']}-{hash}"
+            print(
+                f"{context.session.profile_name} cache has cached multi session with domain: {multisession_domain_name}"
+            )
+            url = build_regular_url(context.session, suffix, multisession_domain_name)
+            open(url)
 
 
 def main() -> None:

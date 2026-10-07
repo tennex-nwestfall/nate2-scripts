@@ -1,10 +1,9 @@
+# ruff: noqa: F401
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-import boto3
-
 from nate2_scripts.console.boto3_session import find_and_update_profile
-from nate2_scripts.console.resolvers import Context, Resolver
+from nate2_scripts.console.resolvers import Resolver
 from nate2_scripts.console.resolvers.athena import AthenaResolver
 from nate2_scripts.console.resolvers.batch import BatchResolver
 from nate2_scripts.console.resolvers.bedrock import BedrockResolver
@@ -31,6 +30,7 @@ from nate2_scripts.console.resolvers.parameter import ParameterResolver
 from nate2_scripts.console.resolvers.rds import RdsResolver
 from nate2_scripts.console.resolvers.route53 import Route53Resolver
 from nate2_scripts.console.resolvers.s3 import S3Resolver
+from nate2_scripts.console.resolvers.sagemaker import SagemakerResolver
 from nate2_scripts.console.resolvers.secretsmanager import SecretsManagerResolver
 from nate2_scripts.console.resolvers.sns import SnsResolver
 from nate2_scripts.console.resolvers.sqs import SqsResolver
@@ -44,13 +44,23 @@ from nate2_scripts.console.types import Arn, Context
 MAX_THREADS = 10
 
 RESOLVERS: list[Resolver] = [
-    # have name-resolution so it must be listed first / in this order
+    # have name-resolution so it must be listed first / in the order they should be resolved
     LogsResolver(),
     S3Resolver(),
     Ec2Resolver(),
     CloudFormationResolver(),
     LambdaResolver(),
-    # no name-resolution
+    # ------ no name-resolution
+    AthenaResolver(),
+    BedrockResolver(),
+    CostResolver(),
+    FsxResolver(),
+    MarketplaceResolver(),
+    Route53Resolver(),
+    SagemakerResolver(),
+    SupportResolver(),
+    StepFunctionsResolver(),
+    StorageGatewayResolver(),
     # VpcResolver(),
     # IamResolver(),
     # RdsResolver(),
@@ -63,23 +73,16 @@ RESOLVERS: list[Resolver] = [
     # DynamoDbResolver(),
     # StepFunctionsResolver(),
     # ElbResolver(),
-    # CostResolver(),
     # SupportResolver(),
-    # AthenaResolver(),
     # EcrResolver(),
-    # BedrockResolver(),
     # ConfigResolver(),
     # ControlTowerResolver(),
     # CognitoResolver(),
     # CloudFrontResolver(),
-    # Route53Resolver(),
-    # KmsResolver(),
-    # StorageGatewayResolver(),
-    # FsxResolver(),
+    # KmsResolver()
     # SsmResolver(),
     # ParameterResolver(),
     # CloudTrailResolver(),
-    MarketplaceResolver(),
 ]
 
 
@@ -95,7 +98,7 @@ class TextResolver:
 
     def get_destination_suffix(self, service: str, search: str = "") -> str | None:
         if not service:
-            return "console.aws.amazon.com"
+            return ""
 
         arn = Arn.try_parse(service)
         if arn is not None:
@@ -104,7 +107,7 @@ class TextResolver:
             return self.__resolve_not_arn(service, search)
 
     def __resolve_arn2(self, arn: Arn) -> str | None:
-        if arn.account and arn.account != self.context.account:  # noqa: SIM102
+        if arn.account and arn.account != self.context.account:
             new_session = find_and_update_profile(self.context.session, arn.account)
             if new_session:
                 self.context.session = new_session
@@ -154,9 +157,7 @@ class TextResolver:
         results: dict[int, str] = {}
         with ThreadPoolExecutor(max_workers=MAX_THREADS) as executor:
             future_to_priority = {
-                executor.submit(
-                    resolver.try_resolve_name, self.context, name, search
-                ): priority
+                executor.submit(resolver.try_resolve_name, self.context, name): priority
                 for priority, resolver in enumerate(RESOLVERS)
             }
             for future in as_completed(future_to_priority):

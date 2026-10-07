@@ -7,10 +7,12 @@ class StepFunctionsResolver(Resolver):
     def get_service_names(self) -> list[str]:
         return ["step"]
 
-    def try_resolve_name(self, context: Context, name: str, search: str) -> str | None:
+    def try_resolve_name(self, context: Context, name: str) -> str | None:
         return None
 
     def try_resolve_arn(self, context: Context, arn: Arn) -> str | None:
+        # TODO: Implement ARN resolution for Step Functions resources
+        return None
         if arn.service != "states":
             return None
 
@@ -39,7 +41,7 @@ class StepFunctionsResolver(Resolver):
     ) -> str | None:
         if service not in self.get_service_names():
             return None
-        return f"{context.default_region}.console.aws.amazon.com/states/"
+        return "/states/home#/statemachines"
 
     def try_resolve_id(self, context: Context, id: str) -> str | None:
         return None

@@ -11,4 +11,4 @@ def make_session(profile_name: str, region: str | None = None):
 
 
 def make_link(arn: Arn) -> str:
-    return f"console.aws.amazon.com/go/view?arn={arn.encode()}"
+    return f"/go/view?arn={arn.encode()}"

@@ -8,7 +8,7 @@ class S3Resolver(Resolver):
     def get_service_names(self) -> list[str]:
         return ["s3"]
 
-    def try_resolve_name(self, context: Context, name: str, search: str) -> str | None:
+    def try_resolve_name(self, context: Context, name: str) -> str | None:
         # search query for the S3 is not in the url
         # so search is unused
         arn = Arn("s3", "", "", name)
@@ -30,7 +30,7 @@ class S3Resolver(Resolver):
     ) -> str | None:
         if service not in self.get_service_names():
             return None
-        return "console.aws.amazon.com/s3/home"
+        return "/s3/home"
 
     def try_resolve_id(self, context: Context, id: str) -> str | None:
         match = re.match(r"^s3://(.+)", id)

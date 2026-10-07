@@ -5,7 +5,7 @@ class CostResolver(Resolver):
     def get_service_names(self) -> list[str]:
         return ["cost"]
 
-    def try_resolve_name(self, context: Context, name: str, search: str) -> str | None:
+    def try_resolve_name(self, context: Context, name: str) -> str | None:
         return None
 
     def try_resolve_arn(self, context: Context, arn: Arn) -> str | None:
@@ -16,7 +16,8 @@ class CostResolver(Resolver):
     ) -> str | None:
         if service not in self.get_service_names():
             return None
-        return f"{context.default_region}.console.aws.amazon.com/costmanagement/"
+        context.set_region("us-east-1")
+        return "/costmanagement/home"
 
     def try_resolve_id(self, context: Context, id: str) -> str | None:
         return None

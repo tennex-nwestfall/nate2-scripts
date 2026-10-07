@@ -13,7 +13,7 @@ class Resolver(ABC):
         pass
 
     @abstractmethod
-    def try_resolve_name(self, context: Context, name: str, search: str) -> str | None:
+    def try_resolve_name(self, context: Context, name: str) -> str | None:
         pass
 
     @abstractmethod
@@ -35,4 +35,4 @@ class Resolver(ABC):
         pass
 
     def get_arn_link(self, arn: Arn) -> str:
-        return f"console.aws.amazon.com/go/view?arn={arn.encode()}"
+        return f"/go/view?arn={arn.encode()}"

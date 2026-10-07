@@ -14,6 +14,7 @@ class Context:
     session: boto3.Session
     regions: list[str]
     identity: CallerIdentity
+    useprefix: bool = True
 
     def set_region(self, region: str):
         self.session._session.set_config_variable("region", region)

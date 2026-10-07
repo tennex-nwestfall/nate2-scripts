@@ -7,7 +7,9 @@ class CloudFormationResolver(Resolver):
     def get_service_names(self) -> list[str]:
         return ["cloudformation", "cf"]
 
-    def try_resolve_name(self, context: Context, name: str, search: str) -> str | None:
+    def try_resolve_name(self, context: Context, name: str) -> str | None:
+        # TODO: implement name resolution for CloudFormation stacks
+        return None
         for region in context.regions:
             try:
                 client = context.session.client("cloudformation", region_name=region)
@@ -21,7 +23,9 @@ class CloudFormationResolver(Resolver):
         return None
 
     def try_resolve_arn(self, context: Context, arn: Arn) -> str | None:
-        # cloudformation was never resolved via ARN in the original implementation
+        if arn.service != "cloudformation":
+            return None
+        # TODO: Implement ARN resolution for CloudFormation stacks
         return None
 
     def try_resolve_service(
@@ -29,7 +33,7 @@ class CloudFormationResolver(Resolver):
     ) -> str | None:
         if service not in self.get_service_names():
             return None
-        return f"{context.default_region}.console.aws.amazon.com/cloudformation/"
+        return "console.aws.amazon.com/cloudformation/"
 
     def try_resolve_id(self, context: Context, id: str) -> str | None:
         return None
