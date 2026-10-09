@@ -16,8 +16,8 @@ GROUP3 = "/aws/lambda/function3"
 STREAM3 = "2026/03/14/[$LATEST]fedcba9876543210"
 
 
-@pytest.fixture(autouse=True)
-def cloudwatch_resources(aws_profiles):
+@pytest.fixture(autouse=True, scope="module")
+def cloudwatch_resources():
     """Seed the moto backend (already active via the aws_profiles fixture) with
     the buckets/objects the tests check for existence."""
     session = boto3.Session(profile_name="fake-A-org", region_name="us-east-1")

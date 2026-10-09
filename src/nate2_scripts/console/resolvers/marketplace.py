@@ -16,9 +16,6 @@ class MarketplaceResolver(Resolver):
     def try_resolve_service(
         self, context: Context, service: str, search: str
     ) -> str | None:
-        if service not in self.get_service_names():
-            return None
-
         # console errors for regions other than us-east-1
         context.set_region("us-east-1")
         if service == "tennex":

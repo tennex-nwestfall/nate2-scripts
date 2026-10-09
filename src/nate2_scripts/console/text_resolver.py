@@ -12,7 +12,6 @@ from nate2_scripts.console.resolvers.cloudfront import CloudFrontResolver
 from nate2_scripts.console.resolvers.cloudtrail import CloudTrailResolver
 from nate2_scripts.console.resolvers.cognito import CognitoResolver
 from nate2_scripts.console.resolvers.config import ConfigResolver
-from nate2_scripts.console.resolvers.controltower import ControlTowerResolver
 from nate2_scripts.console.resolvers.cost import CostResolver
 from nate2_scripts.console.resolvers.dynamodb import DynamoDbResolver
 from nate2_scripts.console.resolvers.ec2 import Ec2Resolver
@@ -26,7 +25,6 @@ from nate2_scripts.console.resolvers.kms import KmsResolver
 from nate2_scripts.console.resolvers.lambda_ import LambdaResolver
 from nate2_scripts.console.resolvers.logs import LogsResolver
 from nate2_scripts.console.resolvers.marketplace import MarketplaceResolver
-from nate2_scripts.console.resolvers.parameter import ParameterResolver
 from nate2_scripts.console.resolvers.rds import RdsResolver
 from nate2_scripts.console.resolvers.route53 import Route53Resolver
 from nate2_scripts.console.resolvers.s3 import S3Resolver
@@ -53,14 +51,16 @@ RESOLVERS: list[Resolver] = [
     # ------ no name-resolution
     AthenaResolver(),
     BedrockResolver(),
+    CloudFrontResolver(),
     CostResolver(),
     FsxResolver(),
     MarketplaceResolver(),
     Route53Resolver(),
     SagemakerResolver(),
-    SupportResolver(),
+    SsmResolver(),
     StepFunctionsResolver(),
     StorageGatewayResolver(),
+    SupportResolver(),
     # VpcResolver(),
     # IamResolver(),
     # RdsResolver(),
@@ -78,9 +78,7 @@ RESOLVERS: list[Resolver] = [
     # ConfigResolver(),
     # ControlTowerResolver(),
     # CognitoResolver(),
-    # CloudFrontResolver(),
     # KmsResolver()
-    # SsmResolver(),
     # ParameterResolver(),
     # CloudTrailResolver(),
 ]
@@ -135,9 +133,12 @@ class TextResolver:
 
     def __resolve_not_arn(self, service: str, search: str = "") -> str | None:
         for resolver in RESOLVERS:
-            result = resolver.try_resolve_service(self.context, service.lower(), search)
-            if result is not None:
-                return result
+            if service in resolver.get_service_names():
+                result = resolver.try_resolve_service(
+                    self.context, service.lower(), search
+                )
+                if result is not None:
+                    return result
 
         for resolver in RESOLVERS:
             result = resolver.try_resolve_id(self.context, service)

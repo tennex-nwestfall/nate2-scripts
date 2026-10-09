@@ -41,8 +41,6 @@ class LambdaResolver(Resolver):
     def try_resolve_service(
         self, context: Context, service: str, search: str
     ) -> str | None:
-        if service not in self.get_service_names():
-            return None
         base = "/lambda/home"
         if search:
             return f"{base}#functions?o0=:&v0={urllib.parse.quote(search)}"

@@ -71,9 +71,6 @@ class LogsResolver(Resolver):
     def try_resolve_service(
         self, context: Context, service: str, search: str
     ) -> str | None:
-        if service not in self.get_service_names():
-            return None
-
         base = "/cloudwatch/home"
         if service == "logs":
             if search:

@@ -150,7 +150,7 @@ def open(url: str):
 
 
 def open_console(suffix: str, context: Context, session_cache: SessionCache):
-    print(f"Opening console with suffix: {suffix} and context: {context}")
+    print(f"Opening console with suffix: {suffix}")
     if not context.useprefix:
         open(f"https://{suffix}")
     else:

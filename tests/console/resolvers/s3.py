@@ -13,8 +13,8 @@ KEY2 = "this/file_exists.txt"
 KEY3 = "a/file.txt"
 
 
-@pytest.fixture(autouse=True)
-def s3_resources(aws_profiles):
+@pytest.fixture(autouse=True, scope="module")
+def s3_resources():
     """Seed the moto backend (already active via the aws_profiles fixture) with
     the buckets/objects the tests check for existence."""
     session = boto3.Session(profile_name="fake-A-org", region_name="us-east-1")

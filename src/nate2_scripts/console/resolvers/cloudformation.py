@@ -1,4 +1,5 @@
 import urllib.parse
+from urllib.parse import quote_plus
 
 from nate2_scripts.console.resolvers import Arn, Context, Resolver
 
@@ -8,32 +9,27 @@ class CloudFormationResolver(Resolver):
         return ["cloudformation", "cf"]
 
     def try_resolve_name(self, context: Context, name: str) -> str | None:
-        # TODO: implement name resolution for CloudFormation stacks
-        return None
         for region in context.regions:
             try:
                 client = context.session.client("cloudformation", region_name=region)
                 result = client.describe_stacks(StackName=name)
                 stacks = result.get("Stacks", [])
                 if stacks:
-                    stack_id = urllib.parse.quote(stacks[0]["StackId"], safe="")
-                    return f"{region}.console.aws.amazon.com/cloudformation/home?region={region}#/stacks/stackinfo?stackId={stack_id}"
-            except Exception:
+                    context.set_region(region)
+                    return self.get_arn_str_link(stacks[0]["StackId"])  # type: ignore
+            except Exception:  # noqa: BLE001, S112
                 continue
         return None
 
     def try_resolve_arn(self, context: Context, arn: Arn) -> str | None:
-        if arn.service != "cloudformation":
-            return None
-        # TODO: Implement ARN resolution for CloudFormation stacks
         return None
 
     def try_resolve_service(
         self, context: Context, service: str, search: str
     ) -> str | None:
-        if service not in self.get_service_names():
-            return None
-        return "console.aws.amazon.com/cloudformation/"
+        if search:
+            return f"/cloudformation/home#/stacks?filteringText={quote_plus(search)}&filteringStatus=active&viewNested=true"
+        return "/cloudformation/home#/stacks"
 
     def try_resolve_id(self, context: Context, id: str) -> str | None:
         return None

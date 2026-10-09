@@ -14,8 +14,6 @@ class SupportResolver(Resolver):
     def try_resolve_service(
         self, context: Context, service: str, search: str
     ) -> str | None:
-        if service not in self.get_service_names():
-            return None
         # link must have the region section set to "support"
         # bad but better than changing the overall resolver logic
         context.set_region("support")

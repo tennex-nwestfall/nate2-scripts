@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from urllib.parse import quote
 
 from nate2_scripts.console.types import Arn, Context
 
@@ -36,3 +37,6 @@ class Resolver(ABC):
 
     def get_arn_link(self, arn: Arn) -> str:
         return f"/go/view?arn={arn.encode()}"
+
+    def get_arn_str_link(self, arn: str) -> str:
+        return f"/go/view?arn={quote(arn)}"

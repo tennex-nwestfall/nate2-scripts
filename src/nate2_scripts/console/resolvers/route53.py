@@ -16,8 +16,6 @@ class Route53Resolver(Resolver):
     def try_resolve_service(
         self, context: Context, service: str, search: str
     ) -> str | None:
-        if service not in self.get_service_names():
-            return None
         if service == "rr":
             context.useprefix = False
             return base64.b64decode(b"eW91dHUuYmUvZFF3NHc5V2dYY1E=").decode()

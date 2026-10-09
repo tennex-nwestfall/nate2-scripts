@@ -14,9 +14,7 @@ class FsxResolver(Resolver):
     def try_resolve_service(
         self, context: Context, service: str, search: str
     ) -> str | None:
-        if service not in self.get_service_names():
-            return None
-        return "/fsx"
+        return "/fsx#file-systems"
 
     def try_resolve_id(self, context: Context, id: str) -> str | None:
         return None

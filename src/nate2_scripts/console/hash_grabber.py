@@ -81,9 +81,7 @@ class HashGrabber:
 
         while time.time() < deadline:
             try:
-                print("-----------------------------------------")
                 for url, visit_time in fetch_fn(id, time_started):
-                    print(url, visit_time)
                     match = pattern_with_hash.search(url)
                     if match:
                         return match.group(1)

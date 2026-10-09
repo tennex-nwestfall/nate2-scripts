@@ -28,8 +28,6 @@ class S3Resolver(Resolver):
     def try_resolve_service(
         self, context: Context, service: str, search: str
     ) -> str | None:
-        if service not in self.get_service_names():
-            return None
         return "/s3/home"
 
     def try_resolve_id(self, context: Context, id: str) -> str | None:

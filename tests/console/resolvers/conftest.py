@@ -12,26 +12,29 @@ AWS_CONFIG_FILE = TEST_AWS_DIR / "config"
 AWS_CREDENTIALS_FILE = TEST_AWS_DIR / "credentials"
 
 
-@pytest.fixture(autouse=True)
-def aws_profiles(monkeypatch):
-    """Runs before every test in this directory: points boto3 at the static
+@pytest.fixture(autouse=True, scope="module")
+def aws_profiles():
+    """Runs once per test module in this directory: points boto3 at the static
     AWS config in tests/console/test_aws, and activates moto so all
-    session/STS/service calls hit the in-memory backend.
+    session/STS/service calls hit the in-memory backend. The backend is shared
+    by every test in a module, so resource-seeding fixtures should be
+    module-scoped too.
     """
-    monkeypatch.setenv("AWS_CONFIG_FILE", str(AWS_CONFIG_FILE))
-    monkeypatch.setenv("AWS_SHARED_CREDENTIALS_FILE", str(AWS_CREDENTIALS_FILE))
-    # Env credentials would short-circuit the profile assume-role chain, so
-    # make sure none leak in from the real environment.
-    for var in (
-        "AWS_DEFAULT_PROFILE",
-        "AWS_PROFILE",
-        "AWS_DEFAULT_REGION",
-        "AWS_REGION",
-        "AWS_ACCESS_KEY_ID",
-        "AWS_SECRET_ACCESS_KEY",
-        "AWS_SESSION_TOKEN",
-    ):
-        monkeypatch.delenv(var, raising=False)
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setenv("AWS_CONFIG_FILE", str(AWS_CONFIG_FILE))
+        mp.setenv("AWS_SHARED_CREDENTIALS_FILE", str(AWS_CREDENTIALS_FILE))
+        # Env credentials would short-circuit the profile assume-role chain, so
+        # make sure none leak in from the real environment.
+        for var in (
+            "AWS_DEFAULT_PROFILE",
+            "AWS_PROFILE",
+            "AWS_DEFAULT_REGION",
+            "AWS_REGION",
+            "AWS_ACCESS_KEY_ID",
+            "AWS_SECRET_ACCESS_KEY",
+            "AWS_SESSION_TOKEN",
+        ):
+            mp.delenv(var, raising=False)
 
-    with mock_aws():
-        yield
+        with mock_aws():
+            yield
