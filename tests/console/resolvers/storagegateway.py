@@ -8,7 +8,7 @@ STORAGEGATEWAY_CONSOLE_URL = "/storagegateway/home#/gateways"
 # --------------------------------
 
 
-def test_base_storagegateway():
+def test_service_storagegateway():
     session = make_session("fake-A-org")
     suffix, context = get_suffix(
         "storagegateway",
@@ -21,7 +21,7 @@ def test_base_storagegateway():
     assert context.identity["Account"] == "111111111111"
 
 
-def test_base_sgw():
+def test_service_sgw():
     session = make_session("fake-A-org")
     suffix, context = get_suffix(
         "sgw",

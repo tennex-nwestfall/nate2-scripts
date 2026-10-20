@@ -8,7 +8,7 @@ ATHENA_CONSOLE_URL = "/athena/home#/query-editor"
 # --------------------------------
 
 
-def test_base_athena():
+def test_service_athena():
     session = make_session("fake-A-org")
     suffix, context = get_suffix(
         "athena",
@@ -21,7 +21,7 @@ def test_base_athena():
     assert context.identity["Account"] == "111111111111"
 
 
-def test_base_athena_west():
+def test_service_athena_west():
     session = make_session("fake-A-org")
     suffix, context = get_suffix(
         "athena",

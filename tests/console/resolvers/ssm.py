@@ -32,7 +32,7 @@ def test_base_ssm_west():
     assert context.identity["Account"] == "111111111111"
 
 
-def test_base_parameter():
+def test_service_parameter():
     session = make_session("fake-A-org")
     suffix, context = get_suffix(
         "parameter",
@@ -45,7 +45,7 @@ def test_base_parameter():
     assert context.identity["Account"] == "111111111111"
 
 
-def test_base_ps():
+def test_service_ps():
     session = make_session("fake-A-org")
     suffix, context = get_suffix(
         "ps",
@@ -58,7 +58,7 @@ def test_base_ps():
     assert context.identity["Account"] == "111111111111"
 
 
-def test_base_ps_search_1():
+def test_service_ps_search_1():
     session = make_session("fake-A-org")
     suffix, context = get_suffix(
         "ps",
@@ -73,7 +73,7 @@ def test_base_ps_search_1():
     assert context.identity["Account"] == "111111111111"
 
 
-def test_base_ps_search_2():
+def test_service_ps_search_2():
     session = make_session("fake-A-org")
     suffix, context = get_suffix(
         "parameter",

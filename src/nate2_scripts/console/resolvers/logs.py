@@ -79,6 +79,3 @@ class LogsResolver(Resolver):
                 return f"{base}#logsV2:log-groups"
         else:
             return base
-
-    def try_resolve_id(self, context: Context, id: str) -> str | None:
-        return None

@@ -1,6 +1,5 @@
 import re
 import urllib.parse
-from unittest import case
 
 from nate2_scripts.console.resolvers import Arn, Context, Resolver, split
 
@@ -10,7 +9,6 @@ class Ec2Resolver(Resolver):
         return ["ec2", "sg", "ami"]
 
     def try_resolve_name(self, context: Context, name: str) -> str | None:
-        # search is unused here; name lookup is an exact tag:Name match
         for region in context.regions:
             try:
                 client = context.session.client("ec2", region_name=region)
@@ -45,7 +43,7 @@ class Ec2Resolver(Resolver):
                 if not result["Reservations"]:
                     return None
                 return self.get_arn_link(arn)
-        except Exception:
+        except Exception:  # noqa: BLE001
             return None
         return None
 

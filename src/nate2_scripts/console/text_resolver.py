@@ -9,11 +9,12 @@ from nate2_scripts.console.resolvers.batch import BatchResolver
 from nate2_scripts.console.resolvers.bedrock import BedrockResolver
 from nate2_scripts.console.resolvers.cloudformation import CloudFormationResolver
 from nate2_scripts.console.resolvers.cloudfront import CloudFrontResolver
+from nate2_scripts.console.resolvers.cloudhsm import CloudHsmResolver
 from nate2_scripts.console.resolvers.cloudtrail import CloudTrailResolver
 from nate2_scripts.console.resolvers.cognito import CognitoResolver
 from nate2_scripts.console.resolvers.config import ConfigResolver
 from nate2_scripts.console.resolvers.cost import CostResolver
-from nate2_scripts.console.resolvers.dynamodb import DynamoDbResolver
+from nate2_scripts.console.resolvers.dynamo import DynamoResolver
 from nate2_scripts.console.resolvers.ec2 import Ec2Resolver
 from nate2_scripts.console.resolvers.ecr import EcrResolver
 from nate2_scripts.console.resolvers.ecs import EcsResolver
@@ -50,37 +51,38 @@ RESOLVERS: list[Resolver] = [
     LambdaResolver(),
     # ------ no name-resolution
     AthenaResolver(),
+    BatchResolver(),
     BedrockResolver(),
     CloudFrontResolver(),
+    CloudHsmResolver(),
+    CloudTrailResolver(),
+    CognitoResolver(),
+    ConfigResolver(),
     CostResolver(),
+    DynamoResolver(),
+    EcrResolver(),
+    EcsResolver(),
+    EksResolver(),
+    ElbResolver(),
     FsxResolver(),
+    IamResolver(),
+    KmsResolver(),
     MarketplaceResolver(),
     Route53Resolver(),
     SagemakerResolver(),
+    SecretsManagerResolver(),
     SsmResolver(),
     StepFunctionsResolver(),
     StorageGatewayResolver(),
     SupportResolver(),
     # VpcResolver(),
-    # IamResolver(),
     # RdsResolver(),
-    # SecretsManagerResolver(),
-    # EcsResolver(),
-    # EksResolver(),
     # SnsResolver(),
     # SqsResolver(),
-    # BatchResolver(),
-    # DynamoDbResolver(),
     # StepFunctionsResolver(),
-    # ElbResolver(),
     # SupportResolver(),
-    # EcrResolver(),
-    # ConfigResolver(),
     # ControlTowerResolver(),
-    # CognitoResolver(),
-    # KmsResolver()
     # ParameterResolver(),
-    # CloudTrailResolver(),
 ]
 
 

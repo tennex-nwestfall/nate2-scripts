@@ -8,7 +8,7 @@ SUPPORT_CONSOLE_URL = "/support/home"
 # --------------------------------
 
 
-def test_base_support():
+def test_service_support():
     session = make_session("fake-A-org")
     suffix, context = get_suffix(
         "support",
@@ -22,7 +22,7 @@ def test_base_support():
     assert context.identity["Account"] == "111111111111"
 
 
-def test_base_support_west():
+def test_service_support_west():
     session = make_session("fake-A-org")
     suffix, context = get_suffix(
         "support",

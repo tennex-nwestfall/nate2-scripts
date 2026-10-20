@@ -8,7 +8,7 @@ SAGEMAKER_CONSOLE_URL = "/sagemaker/home#/dashboard"
 # --------------------------------
 
 
-def test_base_sagemaker():
+def test_service_sagemaker():
     session = make_session("fake-A-org")
     suffix, context = get_suffix(
         "sagemaker",
@@ -21,7 +21,7 @@ def test_base_sagemaker():
     assert context.identity["Account"] == "111111111111"
 
 
-def test_base_sage():
+def test_service_sage():
     session = make_session("fake-A-org")
     suffix, context = get_suffix(
         "sage",

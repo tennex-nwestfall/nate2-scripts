@@ -8,7 +8,7 @@ FSX_CONSOLE_URL = "/fsx#file-systems"
 # --------------------------------
 
 
-def test_base_fsx():
+def test_service_fsx():
     session = make_session("fake-A-org")
     suffix, context = get_suffix(
         "fsx",

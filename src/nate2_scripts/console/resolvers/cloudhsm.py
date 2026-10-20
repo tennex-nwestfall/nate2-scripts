@@ -1,0 +1,11 @@
+from nate2_scripts.console.resolvers import Context, Resolver
+
+
+class CloudHsmResolver(Resolver):
+    def get_service_names(self) -> list[str]:
+        return ["cloudhsm", "hsm"]
+
+    def try_resolve_service(
+        self, context: Context, service: str, search: str
+    ) -> str | None:
+        return "/cloudhsm/home#/clusters"

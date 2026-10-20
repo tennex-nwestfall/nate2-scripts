@@ -37,7 +37,7 @@ def cloudwatch_resources():
 # --------------------------------
 
 
-def test_base_cw():
+def test_service_cw():
     session = make_session("fake-A-org")
     suffix, context = get_suffix(
         "cw",
@@ -50,7 +50,7 @@ def test_base_cw():
     assert context.identity["Account"] == "111111111111"
 
 
-def test_base_cloudwatch():
+def test_service_cloudwatch():
     session = make_session("fake-A-org")
     suffix, context = get_suffix(
         "cloudwatch",
@@ -63,7 +63,7 @@ def test_base_cloudwatch():
     assert context.identity["Account"] == "111111111111"
 
 
-def test_base_logs():
+def test_service_logs():
     session = make_session("fake-A-org")
     suffix, context = get_suffix(
         "logs",
@@ -76,7 +76,7 @@ def test_base_logs():
     assert context.identity["Account"] == "111111111111"
 
 
-def test_base_logs_search():
+def test_service_logs_search():
     session = make_session("fake-B-org")
     suffix, context = get_suffix(
         "logs",

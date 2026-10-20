@@ -1,7 +1,6 @@
-import urllib.parse
 from urllib.parse import quote_plus
 
-from nate2_scripts.console.resolvers import Arn, Context, Resolver
+from nate2_scripts.console.resolvers import Context, Resolver
 
 
 class CloudFormationResolver(Resolver):
@@ -21,15 +20,9 @@ class CloudFormationResolver(Resolver):
                 continue
         return None
 
-    def try_resolve_arn(self, context: Context, arn: Arn) -> str | None:
-        return None
-
     def try_resolve_service(
         self, context: Context, service: str, search: str
     ) -> str | None:
         if search:
             return f"/cloudformation/home#/stacks?filteringText={quote_plus(search)}&filteringStatus=active&viewNested=true"
         return "/cloudformation/home#/stacks"
-
-    def try_resolve_id(self, context: Context, id: str) -> str | None:
-        return None

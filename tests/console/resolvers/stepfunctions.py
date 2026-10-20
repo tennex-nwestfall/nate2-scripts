@@ -8,7 +8,7 @@ STEPFUNCTIONS_CONSOLE_URL = "/states/home#/statemachines"
 # --------------------------------
 
 
-def test_base_step():
+def test_service_step():
     session = make_session("fake-A-org")
     suffix, context = get_suffix(
         "step",

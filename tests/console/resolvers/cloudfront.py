@@ -8,7 +8,7 @@ CLOUDFRONT_CONSOLE_URL = "/cloudfront/v4/home#/distributions"
 # --------------------------------
 
 
-def test_base_cloudfront():
+def test_service_cloudfront():
     session = make_session("fake-A-org")
     suffix, context = get_suffix(
         "cloudfront",
@@ -21,7 +21,7 @@ def test_base_cloudfront():
     assert context.identity["Account"] == "111111111111"
 
 
-def test_base_front():
+def test_service_front():
     session = make_session("fake-A-org")
     suffix, context = get_suffix(
         "front",

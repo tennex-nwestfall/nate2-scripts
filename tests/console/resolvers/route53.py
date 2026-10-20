@@ -8,7 +8,7 @@ ROUTE53_CONSOLE_URL = "/route53/v2/home"
 # --------------------------------
 
 
-def test_base_53():
+def test_service_53():
     session = make_session("fake-A-org")
     suffix, context = get_suffix(
         "53",
@@ -21,7 +21,7 @@ def test_base_53():
     assert context.identity["Account"] == "111111111111"
 
 
-def test_base_route53():
+def test_service_route53():
     session = make_session("fake-A-org")
     suffix, context = get_suffix(
         "route53",

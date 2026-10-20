@@ -8,7 +8,7 @@ COST_CONSOLE_URL = "/costmanagement/home"
 # --------------------------------
 
 
-def test_base_cost():
+def test_service_cost():
     session = make_session("fake-A-org")
     suffix, context = get_suffix(
         "cost",

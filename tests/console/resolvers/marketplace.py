@@ -8,7 +8,7 @@ MARKETPLACE_CONSOLE_URL = "/marketplace/search"
 # --------------------------------
 
 
-def test_base_market():
+def test_service_market():
     session = make_session("fake-A-org")
     suffix, context = get_suffix(
         "market",
@@ -21,7 +21,7 @@ def test_base_market():
     assert context.identity["Account"] == "111111111111"
 
 
-def test_tennex_service():
+def test_service_tennex():
     session = make_session("fake-A-org")
     suffix, context = get_suffix(
         "tennex",
@@ -34,7 +34,7 @@ def test_tennex_service():
     assert context.identity["Account"] == "111111111111"
 
 
-def test_market_search():
+def test_service_market_search():
     session = make_session("fake-A-org")
     suffix, context = get_suffix(
         "market",
@@ -47,7 +47,7 @@ def test_market_search():
     assert context.identity["Account"] == "111111111111"
 
 
-def test_marketplace_search():
+def test_service_marketplace_search():
     session = make_session("fake-A-org")
     suffix, context = get_suffix(
         "marketplace",
