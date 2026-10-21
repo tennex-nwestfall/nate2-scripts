@@ -11,6 +11,12 @@ To install run:
 pip install nate2-scripts
 ```
 
+To update run:
+
+```bash
+pip install --upgrade nate2-scripts
+```
+
 ## Scripts
 
 ### `console`
