@@ -1,7 +1,7 @@
 from nate2_scripts.console import get_suffix
 from tests.console.resolvers import make_session
 
-SUPPORT_CONSOLE_URL = "/support/home"
+SUPPORT_CONSOLE_URL = "/support/home#/"
 
 # --------------------------------
 # Service

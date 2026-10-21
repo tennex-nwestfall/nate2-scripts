@@ -1,9 +1,10 @@
-# ruff: noqa: F401
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from nate2_scripts.console.boto3_session import find_and_update_profile
 from nate2_scripts.console.resolvers import Resolver
+from nate2_scripts.console.resolvers.apigateway import ApiGatewayResolver
+from nate2_scripts.console.resolvers.artifact import ArtifactResolver
 from nate2_scripts.console.resolvers.athena import AthenaResolver
 from nate2_scripts.console.resolvers.batch import BatchResolver
 from nate2_scripts.console.resolvers.bedrock import BedrockResolver
@@ -13,19 +14,29 @@ from nate2_scripts.console.resolvers.cloudhsm import CloudHsmResolver
 from nate2_scripts.console.resolvers.cloudtrail import CloudTrailResolver
 from nate2_scripts.console.resolvers.cognito import CognitoResolver
 from nate2_scripts.console.resolvers.config import ConfigResolver
+from nate2_scripts.console.resolvers.controltower import ControlTowerResolver
 from nate2_scripts.console.resolvers.cost import CostResolver
 from nate2_scripts.console.resolvers.dynamo import DynamoResolver
 from nate2_scripts.console.resolvers.ec2 import Ec2Resolver
 from nate2_scripts.console.resolvers.ecr import EcrResolver
 from nate2_scripts.console.resolvers.ecs import EcsResolver
+from nate2_scripts.console.resolvers.efs import EfsResolver
 from nate2_scripts.console.resolvers.eks import EksResolver
+from nate2_scripts.console.resolvers.elasticbeanstalk import ElasticBeanstalkResolver
 from nate2_scripts.console.resolvers.elb import ElbResolver
+from nate2_scripts.console.resolvers.eventbridge import EventBridgeResolver
 from nate2_scripts.console.resolvers.fsx import FsxResolver
+from nate2_scripts.console.resolvers.glue import GlueResolver
+from nate2_scripts.console.resolvers.guardduty import GuardDutyResolver
 from nate2_scripts.console.resolvers.iam import IamResolver
+from nate2_scripts.console.resolvers.inspector import InspectorResolver
 from nate2_scripts.console.resolvers.kms import KmsResolver
 from nate2_scripts.console.resolvers.lambda_ import LambdaResolver
+from nate2_scripts.console.resolvers.lex import LexResolver
+from nate2_scripts.console.resolvers.lightsail import LightsailResolver
 from nate2_scripts.console.resolvers.logs import LogsResolver
 from nate2_scripts.console.resolvers.marketplace import MarketplaceResolver
+from nate2_scripts.console.resolvers.polly import PollyResolver
 from nate2_scripts.console.resolvers.rds import RdsResolver
 from nate2_scripts.console.resolvers.route53 import Route53Resolver
 from nate2_scripts.console.resolvers.s3 import S3Resolver
@@ -50,6 +61,8 @@ RESOLVERS: list[Resolver] = [
     CloudFormationResolver(),
     LambdaResolver(),
     # ------ no name-resolution
+    ApiGatewayResolver(),
+    ArtifactResolver(),
     AthenaResolver(),
     BatchResolver(),
     BedrockResolver(),
@@ -58,31 +71,37 @@ RESOLVERS: list[Resolver] = [
     CloudTrailResolver(),
     CognitoResolver(),
     ConfigResolver(),
+    ControlTowerResolver(),
     CostResolver(),
     DynamoResolver(),
     EcrResolver(),
     EcsResolver(),
+    EfsResolver(),
     EksResolver(),
+    ElasticBeanstalkResolver(),
     ElbResolver(),
+    EventBridgeResolver(),
     FsxResolver(),
+    GlueResolver(),
+    GuardDutyResolver(),
     IamResolver(),
+    InspectorResolver(),
     KmsResolver(),
+    LexResolver(),
+    LightsailResolver(),
     MarketplaceResolver(),
+    PollyResolver(),
+    RdsResolver(),
     Route53Resolver(),
     SagemakerResolver(),
     SecretsManagerResolver(),
+    SnsResolver(),
+    SqsResolver(),
     SsmResolver(),
     StepFunctionsResolver(),
     StorageGatewayResolver(),
     SupportResolver(),
-    # VpcResolver(),
-    # RdsResolver(),
-    # SnsResolver(),
-    # SqsResolver(),
-    # StepFunctionsResolver(),
-    # SupportResolver(),
-    # ControlTowerResolver(),
-    # ParameterResolver(),
+    VpcResolver(),
 ]
 
 
