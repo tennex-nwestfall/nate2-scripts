@@ -194,7 +194,7 @@ def main() -> None:
     print("Default region is: ", session.region_name)
 
     suffix, context = get_suffix(args.service, args.search, args.region, session)
-    if suffix:
+    if suffix is not None:
         open_console(suffix, context, session_cache)
     else:
         print("Cannot open console page.")

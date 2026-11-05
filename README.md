@@ -105,6 +105,7 @@ console -f
 | Config                 | `config` / `cfg`                          |              |
 | Control Tower          | `controltower`                            |              |
 | Cost Management        | `cost`                                    |              |
+| DataSync               | `datasync` / `ds`                         |              |
 | DynamoDB               | `dynamodb` / `dynamo` / `dyn`             |              |
 | EC2 instances          | `ec2`                                     | ✓            |
 | EC2 AMIs (owned by me) | `ami`                                     | ✓            |
@@ -130,6 +131,7 @@ console -f
 | Route 53               | `route53` / `53`                          |              |
 | S3                     | `s3`                                      |              |
 | SageMaker              | `sagemaker` / `sage`                      |              |
+| Scheduler              | `scheduler` / `sch`                       |              |
 | Secrets Manager        | `secretsmanager` / `secretmanager` / `sm` |              |
 | Security groups        | `sg`                                      | ✓            |
 | SNS                    | `sns`                                     |              |

@@ -16,6 +16,7 @@ from nate2_scripts.console.resolvers.cognito import CognitoResolver
 from nate2_scripts.console.resolvers.config import ConfigResolver
 from nate2_scripts.console.resolvers.controltower import ControlTowerResolver
 from nate2_scripts.console.resolvers.cost import CostResolver
+from nate2_scripts.console.resolvers.datasync import DataSyncResolver
 from nate2_scripts.console.resolvers.dynamo import DynamoResolver
 from nate2_scripts.console.resolvers.ec2 import Ec2Resolver
 from nate2_scripts.console.resolvers.ecr import EcrResolver
@@ -41,6 +42,7 @@ from nate2_scripts.console.resolvers.rds import RdsResolver
 from nate2_scripts.console.resolvers.route53 import Route53Resolver
 from nate2_scripts.console.resolvers.s3 import S3Resolver
 from nate2_scripts.console.resolvers.sagemaker import SagemakerResolver
+from nate2_scripts.console.resolvers.scheduler import SchedulerResolver
 from nate2_scripts.console.resolvers.secretsmanager import SecretsManagerResolver
 from nate2_scripts.console.resolvers.sns import SnsResolver
 from nate2_scripts.console.resolvers.sqs import SqsResolver
@@ -73,6 +75,7 @@ RESOLVERS: list[Resolver] = [
     ConfigResolver(),
     ControlTowerResolver(),
     CostResolver(),
+    DataSyncResolver(),
     DynamoResolver(),
     EcrResolver(),
     EcsResolver(),
@@ -94,6 +97,7 @@ RESOLVERS: list[Resolver] = [
     RdsResolver(),
     Route53Resolver(),
     SagemakerResolver(),
+    SchedulerResolver(),
     SecretsManagerResolver(),
     SnsResolver(),
     SqsResolver(),

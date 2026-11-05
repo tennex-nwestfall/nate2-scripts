@@ -3,6 +3,7 @@ from pathlib import Path
 import boto3
 import pytest
 
+from nate2_scripts.console import get_suffix
 from nate2_scripts.console.resolvers import Arn
 from nate2_scripts.console.text_resolver import RESOLVERS
 
@@ -27,3 +28,16 @@ def test_resolver_has_test_file(resolver):
     assert (TEST_DIR / f"{module_name}.py").is_file(), (
         f"{type(resolver).__name__} has no tests/console/resolvers/{module_name}.py"
     )
+
+
+def test_base():
+    session = make_session("fake-A-org")
+    suffix, context = get_suffix(
+        "",
+        "this parameter isn't possible",
+        "",
+        session,
+    )
+    assert suffix == ""
+    assert context.session.region_name == "us-east-1"
+    assert context.identity["Account"] == "111111111111"
