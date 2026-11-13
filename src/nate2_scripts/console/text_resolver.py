@@ -6,6 +6,7 @@ from nate2_scripts.console.resolvers import Resolver
 from nate2_scripts.console.resolvers.apigateway import ApiGatewayResolver
 from nate2_scripts.console.resolvers.artifact import ArtifactResolver
 from nate2_scripts.console.resolvers.athena import AthenaResolver
+from nate2_scripts.console.resolvers.backup import BackupResolver
 from nate2_scripts.console.resolvers.batch import BatchResolver
 from nate2_scripts.console.resolvers.bedrock import BedrockResolver
 from nate2_scripts.console.resolvers.cloudformation import CloudFormationResolver
@@ -66,6 +67,7 @@ RESOLVERS: list[Resolver] = [
     ApiGatewayResolver(),
     ArtifactResolver(),
     AthenaResolver(),
+    BackupResolver(),
     BatchResolver(),
     BedrockResolver(),
     CloudFrontResolver(),

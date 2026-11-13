@@ -54,7 +54,15 @@ def ensure_profile():
     profile_name = os.environ.get("AWS_PROFILE", "")
     if not profile_name:
         print(
-            "Error: AWS_PROFILE environment variable is not set. run asp.",
+            "Error: AWS_PROFILE environment variable is not set. Run asp.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    profile_region = os.environ.get("AWS_PROFILE_REGION", "")
+    if not profile_region:
+        print(
+            "Error: AWS_PROFILE_REGION environment variable is not set. Run asr or fix your .aws/config.",
             file=sys.stderr,
         )
         sys.exit(1)
