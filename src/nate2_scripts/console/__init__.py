@@ -190,6 +190,7 @@ def open_console(suffix: str, context: Context, session_cache: SessionCache):
 def main() -> None:
     ensure_profile()
     args = parse_args()
+    HashGrabber.ensure_history_access()
 
     session = boto3.Session()
     session_cache = SessionCache()

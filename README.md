@@ -27,6 +27,7 @@ Opens the AWS Management Console in your browser for a specific service, ARN, re
 
 - `AWS_PROFILE` set (e.g. via `asp`)
 - `git config user.email` set — it is used as the `role_session_name` for every assume-role profile
+- Full Disk Access granted to VS Code (or whichever other terminal) in System Settings → Privacy & Security → Full Disk Access, then restart it — macOS TCC blocks reading Chrome/Firefox history otherwise, which is needed to grab the multiaccount hash.
 
 **Example Alias:**
 

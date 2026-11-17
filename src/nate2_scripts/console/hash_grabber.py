@@ -1,3 +1,4 @@
+import os
 import re
 import shutil
 import sqlite3
@@ -15,6 +16,22 @@ SUPPORTED_BROWSERS = {
 WAIT_SECONDS = 10  # Time to wait for the browser to open and record the hash
 
 ONLY_HASH_SECONDS = 100  # Time to wait for the browser to open and record the hash, but only return the hash if found
+
+CHROME_HISTORY_PATH = (
+    Path.home() / "Library/Application Support/Google/Chrome/Default/History"
+)
+FIREFOX_PROFILES_DIR = Path.home() / "Library/Application Support/Firefox/Profiles"
+
+# Deep link to System Settings → Privacy & Security → Full Disk Access
+FULL_DISK_ACCESS_SETTINGS_URL = (
+    "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles"
+)
+
+TERMINAL_APP_NAMES = {
+    "Apple_Terminal": "Terminal",
+    "iTerm.app": "iTerm",
+    "vscode": "Visual Studio Code",
+}
 
 
 class HashGrabber:
@@ -62,6 +79,7 @@ class HashGrabber:
         Raises RuntimeError if no matching URL is found within the timeout.
         """
         default = HashGrabber._get_default_browser()
+        HashGrabber.ensure_history_access(default)
 
         pattern_with_hash = re.compile(
             rf"https://{re.escape(id)}-([a-z0-9]+)\.[a-z0-9-]+\.console\.aws\.amazon\.com"
@@ -98,6 +116,37 @@ class HashGrabber:
         raise RuntimeError(
             f"No AWS console URL found for account {id} within {WAIT_SECONDS}s"
         )
+
+    @staticmethod
+    def ensure_history_access(browser: str | None = None) -> None:
+        """Exit with instructions if macOS TCC blocks reading the browser's profile data.
+
+        Checks the default browser when `browser` is not given. macOS has no API to
+        prompt for Full Disk Access, so on denial this opens the Full Disk Access pane
+        in System Settings for the user to grant it manually.
+        """
+        browser = browser or HashGrabber._get_default_browser()
+        probe = {"chrome": CHROME_HISTORY_PATH, "firefox": FIREFOX_PROFILES_DIR}[
+            browser
+        ]
+        try:
+            if probe.is_dir():
+                next(probe.iterdir(), None)
+            elif probe.exists():
+                with probe.open("rb"):
+                    pass
+        except PermissionError:
+            app = TERMINAL_APP_NAMES.get(
+                os.environ.get("TERM_PROGRAM", ""), "your terminal app"
+            )
+            print(
+                f"macOS is blocking access to {browser} history ({probe}).\n"
+                f"Grant Full Disk Access to {app} in the System Settings pane that just opened, "
+                f"then restart {app} and try again.",
+                file=sys.stderr,
+            )
+            subprocess.run(["open", FULL_DISK_ACCESS_SETTINGS_URL], check=False)
+            sys.exit(1)
 
     @staticmethod
     def _chrome_history(
@@ -169,11 +218,11 @@ class HashGrabber:
 
     @staticmethod
     def _chrome_sqlite_path() -> Path:
-        return Path.home() / "Library/Application Support/Google/Chrome/Default/History"
+        return CHROME_HISTORY_PATH
 
     @staticmethod
     def _firefox_sqlite_path() -> Path | None:
-        profiles_dir = Path.home() / "Library/Application Support/Firefox/Profiles"
+        profiles_dir = FIREFOX_PROFILES_DIR
         if not profiles_dir.exists():
             return None
 
